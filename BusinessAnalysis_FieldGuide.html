@@ -1,0 +1,1963 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Business Analyst Field Guide | Colaberry Enterprise AI Leadership Accelerator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,300;0,400;0,500;0,700;0,900;1,400&family=Roboto+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============ COLABERRY DESIGN TOKENS ============ */
+:root{
+  --cherry:#FB2832;
+  --berry:#367895;
+  --leaf:#5BA63C;
+  --amber:#E8920C;
+  --text:#1A1A1A;
+  --muted:#6B6B6B;
+  --border:#E4E4E3;
+  --surface:#FFFFFF;
+  --surface-alt:#F8F8F7;
+  --font-body:'Roboto',system-ui,Arial,sans-serif;
+  --font-mono:'Roboto Mono',ui-monospace,'Consolas',monospace;
+  --radius:10px;
+  --shadow:0 1px 3px rgba(26,26,26,.08),0 1px 2px rgba(26,26,26,.06);
+  --shadow-lg:0 12px 32px rgba(26,26,26,.14),0 2px 8px rgba(26,26,26,.08);
+  --sidebar-w:280px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --cherry:#FF5960; --berry:#5EA9C4; --leaf:#8AC759; --amber:#E8920C;
+    --text:#F0F0EF; --muted:#A6A6A4; --border:#2B2B2B;
+    --surface:#161616; --surface-alt:#0F0F0F;
+    --shadow:0 1px 3px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+    --shadow-lg:0 12px 32px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"]{
+  --cherry:#FF5960; --berry:#5EA9C4; --leaf:#8AC759; --amber:#E8920C;
+  --text:#F0F0EF; --muted:#A6A6A4; --border:#2B2B2B;
+  --surface:#161616; --surface-alt:#0F0F0F;
+  --shadow:0 1px 3px rgba(0,0,0,.4),0 1px 2px rgba(0,0,0,.3);
+  --shadow-lg:0 12px 32px rgba(0,0,0,.55),0 2px 8px rgba(0,0,0,.4);
+  color-scheme: dark;
+}
+*,*::before,*::after{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  font-family:var(--font-body);
+  background:var(--surface-alt);
+  color:var(--text);
+  line-height:1.55;
+  font-size:15.5px;
+  -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,h4,h5{
+  font-family:var(--font-body);
+  color:var(--berry);
+  font-weight:700;
+  line-height:1.25;
+  margin:0 0 .5em 0;
+}
+h1{font-size:2rem;font-weight:900;}
+h2{font-size:1.5rem;border-bottom:2px solid var(--border);padding-bottom:.4em;margin-top:2.2em;}
+h3{font-size:1.15rem;margin-top:1.6em;}
+h4{font-size:1rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin-top:1.4em;}
+p{margin:0 0 1em 0;}
+a{color:var(--berry);}
+code,.mono{font-family:var(--font-mono);}
+small{color:var(--muted);}
+ul,ol{padding-left:1.4em;}
+li{margin-bottom:.35em;}
+
+/* ============ LAYOUT ============ */
+.app-header{
+  position:sticky;top:0;z-index:60;
+  display:flex;align-items:center;gap:18px;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  padding:10px 20px;
+  box-shadow:var(--shadow);
+}
+.brand{display:flex;align-items:center;gap:12px;flex-shrink:0;}
+.brand img{height:38px;display:block;}
+.brand .tag{display:flex;flex-direction:column;}
+.brand .tag b{font-size:.95rem;color:var(--text);font-weight:700;}
+.brand .tag span{font-size:.7rem;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;}
+.header-search{flex:1;max-width:520px;position:relative;}
+.header-search input{
+  width:100%;padding:10px 14px 10px 38px;border-radius:999px;border:1.5px solid var(--border);
+  background:var(--surface-alt);color:var(--text);font-family:var(--font-body);font-size:.9rem;outline:none;
+  transition:border-color .15s;
+}
+.header-search input:focus{border-color:var(--berry);}
+.header-search::before{
+  content:"";position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  width:15px;height:15px;border:2px solid var(--muted);border-radius:50%;
+  box-shadow:5px 5px 0 -3px var(--muted);
+}
+.search-results{
+  position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--surface);
+  border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-lg);
+  max-height:420px;overflow-y:auto;display:none;z-index:70;
+}
+.search-results.show{display:block;}
+.search-results .sr-item{padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;}
+.search-results .sr-item:last-child{border-bottom:none;}
+.search-results .sr-item:hover{background:var(--surface-alt);}
+.search-results .sr-item b{color:var(--berry);display:block;font-size:.85rem;}
+.search-results .sr-item span{color:var(--muted);font-size:.78rem;}
+.search-results .sr-empty{padding:16px;color:var(--muted);font-size:.85rem;}
+.header-actions{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.icon-btn{
+  border:1px solid var(--border);background:var(--surface);color:var(--text);
+  border-radius:8px;padding:8px 12px;font-size:.8rem;cursor:pointer;font-family:var(--font-body);
+  display:flex;align-items:center;gap:6px;font-weight:500;
+}
+.icon-btn:hover{border-color:var(--berry);color:var(--berry);}
+
+.app-shell{display:flex;max-width:1600px;margin:0 auto;min-height:calc(100vh - 60px);}
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  border-right:1px solid var(--border);
+  padding:22px 14px 60px 14px;
+  position:sticky;top:60px;align-self:flex-start;
+  height:calc(100vh - 60px);overflow-y:auto;
+}
+.sidebar .nav-group{margin-bottom:18px;}
+.sidebar .nav-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:700;padding:0 10px;margin-bottom:6px;}
+.sidebar a.nav-link{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 10px;border-radius:8px;color:var(--text);text-decoration:none;
+  font-size:.86rem;font-weight:500;margin-bottom:2px;
+}
+.sidebar a.nav-link:hover{background:var(--surface-alt);}
+.sidebar a.nav-link.active{background:var(--berry);color:#fff;}
+.sidebar a.nav-link .n{
+  font-family:var(--font-mono);font-size:.68rem;color:var(--muted);width:20px;flex-shrink:0;
+}
+.sidebar a.nav-link.active .n{color:#fff;opacity:.75;}
+
+main{flex:1;min-width:0;padding:28px 40px 100px 40px;}
+.hero{
+  background:linear-gradient(135deg,var(--berry) 0%,#2b5c72 100%);
+  color:#fff;border-radius:16px;padding:34px 38px;margin-bottom:32px;box-shadow:var(--shadow-lg);
+}
+.hero h1{color:#fff;margin-bottom:.3em;}
+.hero p{color:#dff0f6;max-width:680px;margin-bottom:0;}
+.hero .hero-badges{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap;}
+.hero .hero-badge{background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.3);padding:5px 12px;border-radius:999px;font-size:.72rem;font-weight:600;letter-spacing:.03em;}
+
+section{scroll-margin-top:76px;margin-bottom:56px;}
+section.hidden-by-search{opacity:.25;}
+
+/* ============ CALLOUTS ============ */
+.callout{border-left:4px solid var(--berry);background:var(--surface);border-radius:0 8px 8px 0;padding:14px 18px;margin:16px 0;box-shadow:var(--shadow);}
+.callout b{display:block;margin-bottom:3px;font-size:.78rem;text-transform:uppercase;letter-spacing:.05em;}
+.callout.info{border-color:var(--berry);}
+.callout.info b{color:var(--berry);}
+.callout.success{border-color:var(--leaf);}
+.callout.success b{color:var(--leaf);}
+.callout.warning{border-color:var(--amber);}
+.callout.warning b{color:var(--amber);}
+.callout.critical{border-color:var(--cherry);}
+.callout.critical b{color:var(--cherry);}
+
+/* ============ TABLES ============ */
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid var(--border);box-shadow:var(--shadow);margin:16px 0;}
+table{width:100%;border-collapse:collapse;background:var(--surface);font-size:.85rem;min-width:600px;}
+thead th{
+  background:var(--berry);color:#fff;text-align:left;padding:11px 14px;font-weight:700;
+  font-size:.72rem;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
+}
+tbody td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:nth-child(even){background:var(--surface-alt);}
+tbody tr:hover{background:rgba(54,120,149,.07);}
+
+/* ============ BADGES ============ */
+.badge{display:inline-block;padding:2px 10px;border-radius:999px;font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;font-family:var(--font-mono);white-space:nowrap;}
+.badge-must{background:rgba(251,40,50,.13);color:var(--cherry);border:1px solid rgba(251,40,50,.35);}
+.badge-should{background:rgba(54,120,149,.13);color:var(--berry);border:1px solid rgba(54,120,149,.35);}
+.badge-could{background:rgba(91,166,60,.13);color:var(--leaf);border:1px solid rgba(91,166,60,.35);}
+.badge-wont{background:rgba(107,107,107,.13);color:var(--muted);border:1px solid rgba(107,107,107,.35);}
+.badge-fr{background:rgba(54,120,149,.13);color:var(--berry);border:1px solid rgba(54,120,149,.35);}
+.badge-nfr{background:rgba(232,146,12,.13);color:var(--amber);border:1px solid rgba(232,146,12,.35);}
+.badge-pass{background:rgba(91,166,60,.13);color:var(--leaf);border:1px solid rgba(91,166,60,.35);}
+.badge-progress{background:rgba(232,146,12,.13);color:var(--amber);border:1px solid rgba(232,146,12,.35);}
+
+/* ============ BUTTONS ============ */
+.btn{
+  display:inline-flex;align-items:center;gap:7px;padding:9px 16px;border-radius:8px;border:none;
+  font-family:var(--font-body);font-size:.82rem;font-weight:700;cursor:pointer;text-decoration:none;
+}
+.btn-primary{background:var(--cherry);color:#fff;}
+.btn-primary:hover{background:#e0212a;}
+.btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--text);}
+.btn-outline:hover{border-color:var(--berry);color:var(--berry);}
+.btn-ghost{background:var(--surface-alt);color:var(--text);border:1px solid var(--border);}
+.doc-toolbar{display:flex;gap:10px;flex-wrap:wrap;margin:14px 0 26px 0;}
+
+/* ============ DOC CARD (deliverable shell) ============ */
+.doc-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:16px;overflow:hidden;box-shadow:var(--shadow-lg);
+}
+.doc-cover{
+  background:linear-gradient(135deg,#1f4a5c 0%,var(--berry) 55%,#2f8aa8 100%);
+  color:#fff;padding:44px 46px 36px 46px;position:relative;
+}
+.doc-cover .doc-cover-logo{height:30px;margin-bottom:26px;filter:brightness(0) invert(1);opacity:.95;}
+.doc-cover .doc-kicker{font-size:.72rem;text-transform:uppercase;letter-spacing:.12em;color:#bfe3f0;font-weight:700;margin-bottom:10px;}
+.doc-cover h2{color:#fff;border:none;margin:0 0 8px 0;font-size:1.9rem;padding:0;}
+.doc-cover .doc-sub{color:#d7edf4;font-size:.95rem;max-width:640px;}
+.doc-control{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:0;
+  background:var(--surface-alt);border-bottom:1px solid var(--border);
+}
+.doc-control div{padding:12px 18px;border-right:1px solid var(--border);}
+.doc-control div:last-child{border-right:none;}
+.doc-control label{display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:700;margin-bottom:3px;}
+.doc-control span{font-family:var(--font-mono);font-size:.82rem;font-weight:500;}
+.doc-body{padding:38px 46px;}
+.doc-body h3{color:var(--berry);}
+.doc-signoff{padding:0 46px 38px 46px;}
+.signoff-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:10px;}
+.signoff-box{border:1px dashed var(--border);border-radius:10px;padding:16px;}
+.signoff-box label{display:block;font-size:.65rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:8px;}
+.signoff-box .name{font-weight:700;font-size:.92rem;}
+.signoff-box .role{color:var(--muted);font-size:.78rem;margin-bottom:10px;}
+.signoff-box .sig{font-family:'Roboto Mono';font-style:italic;color:var(--berry);border-top:1px solid var(--border);padding-top:8px;margin-top:8px;font-size:.85rem;}
+.doc-footer{background:var(--surface-alt);border-top:1px solid var(--border);padding:16px 46px;display:flex;justify-content:space-between;align-items:center;font-size:.72rem;color:var(--muted);}
+.doc-footer img{height:16px;vertical-align:middle;margin-right:6px;opacity:.8;}
+
+/* ============ KPI TILES ============ */
+.kpi-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:18px 0;}
+.kpi-tile{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:16px 18px;box-shadow:var(--shadow);}
+.kpi-tile .kpi-label{font-size:.68rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700;margin-bottom:8px;}
+.kpi-tile .kpi-val{font-size:1.7rem;font-weight:900;color:var(--text);font-family:var(--font-mono);line-height:1;}
+.kpi-tile .kpi-delta{display:inline-flex;align-items:center;gap:4px;font-size:.74rem;font-weight:700;margin-top:8px;}
+.kpi-tile .kpi-delta.up{color:var(--leaf);}
+.kpi-tile .kpi-delta.down{color:var(--cherry);}
+.kpi-tile .kpi-target{font-size:.68rem;color:var(--muted);margin-top:4px;}
+
+/* ============ CHART / DIAGRAM CONTAINERS ============ */
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;box-shadow:var(--shadow);margin:16px 0;}
+.chart-card h4{margin-top:0;}
+.chart-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+@media (max-width:900px){.chart-grid{grid-template-columns:1fr;}}
+.diagram-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:22px;box-shadow:var(--shadow);margin:16px 0;overflow-x:auto;}
+.diagram-card svg{display:block;margin:0 auto;max-width:100%;height:auto;}
+svg text{font-family:var(--font-body);}
+svg .mono-lbl{font-family:var(--font-mono);}
+
+/* ============ PERSONA CARDS ============ */
+.persona-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:18px;margin:18px 0;}
+.persona-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;overflow:hidden;box-shadow:var(--shadow);}
+.persona-head{background:var(--surface-alt);padding:18px 20px;border-bottom:1px solid var(--border);display:flex;gap:14px;align-items:center;}
+.persona-avatar{width:52px;height:52px;border-radius:50%;background:var(--berry);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:1.2rem;flex-shrink:0;}
+.persona-head b{display:block;font-size:1rem;}
+.persona-head span{color:var(--muted);font-size:.78rem;}
+.persona-body{padding:16px 20px;}
+.persona-body h5{margin:0 0 6px 0;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:var(--berry);}
+.persona-body ul{margin:0 0 14px 0;padding-left:1.2em;font-size:.84rem;}
+.persona-quote{font-style:italic;color:var(--muted);border-left:3px solid var(--cherry);padding-left:12px;margin:12px 0 0 0;font-size:.84rem;}
+
+/* ============ FAQ / ASK ============ */
+.ask-widget{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:20px 22px;box-shadow:var(--shadow-lg);margin-bottom:28px;}
+.ask-widget h3{margin-top:0;display:flex;align-items:center;gap:8px;}
+.ask-row{display:flex;gap:10px;}
+.ask-row input{flex:1;padding:11px 16px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface-alt);color:var(--text);font-family:var(--font-body);font-size:.9rem;outline:none;}
+.ask-row input:focus{border-color:var(--cherry);}
+.ask-answer{margin-top:16px;padding:16px 18px;background:var(--surface-alt);border-radius:10px;border-left:4px solid var(--cherry);display:none;}
+.ask-answer.show{display:block;}
+.ask-answer .aq{font-weight:700;font-size:.82rem;color:var(--muted);margin-bottom:6px;}
+.ask-answer .aa{font-size:.92rem;}
+.ask-answer a.jump{display:inline-block;margin-top:10px;font-size:.78rem;font-weight:700;}
+.ask-suggestions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;}
+.ask-chip{background:var(--surface-alt);border:1px solid var(--border);border-radius:999px;padding:5px 12px;font-size:.74rem;cursor:pointer;color:var(--text);}
+.ask-chip:hover{border-color:var(--berry);color:var(--berry);}
+
+.faq-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:10px;box-shadow:var(--shadow);}
+.faq-item summary{font-weight:700;cursor:pointer;color:var(--berry);}
+.faq-item p{margin-top:10px;margin-bottom:0;}
+
+/* ============ MISC ============ */
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;}
+@media (max-width:900px){.two-col{grid-template-columns:1fr;}}
+.tag-list{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;}
+.tag-pill{background:var(--surface-alt);border:1px solid var(--border);padding:4px 10px;border-radius:999px;font-size:.72rem;font-family:var(--font-mono);}
+.step-list{counter-reset:step;list-style:none;padding-left:0;}
+.step-list li{counter-increment:step;position:relative;padding-left:38px;margin-bottom:14px;}
+.step-list li::before{
+  content:counter(step);position:absolute;left:0;top:0;width:26px;height:26px;border-radius:50%;
+  background:var(--berry);color:#fff;font-weight:700;font-size:.8rem;display:flex;align-items:center;justify-content:center;
+}
+.uc-block{border:1px solid var(--border);border-radius:12px;margin:20px 0;overflow:hidden;box-shadow:var(--shadow);}
+.uc-head{background:var(--berry);color:#fff;padding:14px 20px;}
+.uc-head b{font-size:1.02rem;}
+.uc-head span{display:block;font-size:.78rem;color:#d7edf4;margin-top:2px;}
+.uc-meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));background:var(--surface-alt);border-bottom:1px solid var(--border);}
+.uc-meta div{padding:10px 18px;border-right:1px solid var(--border);font-size:.82rem;}
+.uc-meta div:last-child{border-right:none;}
+.uc-meta label{display:block;font-size:.62rem;text-transform:uppercase;color:var(--muted);font-weight:700;margin-bottom:2px;}
+.uc-body{padding:18px 22px;background:var(--surface);}
+.uc-body h5{font-size:.78rem;text-transform:uppercase;letter-spacing:.04em;color:var(--berry);margin:14px 0 6px 0;}
+.uc-body h5:first-child{margin-top:0;}
+.uc-body ol{margin-top:0;font-size:.88rem;}
+.uc-alt{background:rgba(54,120,149,.06);border-left:3px solid var(--berry);padding:10px 14px;border-radius:0 8px 8px 0;margin:8px 0;font-size:.85rem;}
+.uc-exc{background:rgba(251,40,50,.06);border-left:3px solid var(--cherry);padding:10px 14px;border-radius:0 8px 8px 0;margin:8px 0;font-size:.85rem;}
+
+.gwt{font-family:var(--font-mono);font-size:.82rem;background:var(--surface-alt);border-radius:8px;padding:10px 14px;margin:6px 0;border:1px solid var(--border);}
+.gwt b{color:var(--berry);}
+
+.story-card{border:1px solid var(--border);border-radius:12px;margin:14px 0;overflow:hidden;box-shadow:var(--shadow);}
+.story-head{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;background:var(--surface-alt);border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px;}
+.story-head .sid{font-family:var(--font-mono);font-weight:700;color:var(--berry);}
+.story-body{padding:14px 18px;background:var(--surface);}
+.story-body .as{font-size:.95rem;margin-bottom:10px;}
+
+footer.site-footer{border-top:1px solid var(--border);padding:26px 40px;text-align:center;color:var(--muted);font-size:.78rem;}
+footer.site-footer img{height:18px;vertical-align:middle;margin-right:8px;opacity:.8;}
+
+@media print{
+  .app-header,.sidebar,.ask-widget,.doc-toolbar,footer.site-footer,.no-print{display:none !important;}
+  main{padding:0;max-width:100%;}
+  .app-shell{display:block;max-width:100%;}
+  body{background:#fff;}
+  body.printing main > section{display:none;}
+  body.printing main > section.print-target{display:block !important;}
+  .doc-card{box-shadow:none;border:1px solid #ccc;}
+  .hero{display:none;}
+  section{margin-bottom:0;}
+}
+@media (max-width:1000px){
+  .sidebar{display:none;}
+  main{padding:20px;}
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand">
+    <img id="logo-header" src="" alt="Colaberry logo">
+    <div class="tag"><b>Colaberry</b><span>Enterprise AI Leadership Accelerator</span></div>
+  </div>
+  <div class="header-search">
+    <input type="text" id="searchInput" placeholder="Search the field guide (e.g. &quot;MoSCoW&quot;, &quot;fraud score&quot;, &quot;RTM&quot;)" autocomplete="off">
+    <div class="search-results" id="searchResults"></div>
+  </div>
+  <div class="header-actions">
+    <button class="icon-btn" id="askJump" title="Ask the guide">Ask</button>
+    <button class="icon-btn" id="themeToggle" title="Toggle theme">Theme</button>
+  </div>
+</header>
+
+<div class="app-shell">
+  <aside class="sidebar" id="sidebarNav">
+    <div class="nav-group">
+      <div class="nav-label">Start Here</div>
+      <a class="nav-link" href="#overview"><span class="n">00</span> Overview &amp; Discipline Primer</a>
+      <a class="nav-link" href="#ask-section"><span class="n">01</span> Ask the Guide</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Case: Meridian Mutual</div>
+      <a class="nav-link" href="#exec-summary"><span class="n">02</span> Executive Summary</a>
+      <a class="nav-link" href="#vision"><span class="n">03</span> Vision &amp; Business Case</a>
+      <a class="nav-link" href="#brd"><span class="n">04</span> Business Requirements (BRD)</a>
+      <a class="nav-link" href="#user-stories"><span class="n">05</span> User Stories &amp; AC</a>
+      <a class="nav-link" href="#use-cases"><span class="n">06</span> Use Cases</a>
+      <a class="nav-link" href="#personas"><span class="n">07</span> Personas</a>
+      <a class="nav-link" href="#stakeholders"><span class="n">08</span> Stakeholder Matrix</a>
+      <a class="nav-link" href="#process"><span class="n">09</span> Current &amp; Future State</a>
+      <a class="nav-link" href="#rtm"><span class="n">10</span> Traceability Matrix</a>
+    </div>
+    <div class="nav-group">
+      <div class="nav-label">Reference</div>
+      <a class="nav-link" href="#faq"><span class="n">11</span> FAQ &amp; Glossary</a>
+    </div>
+  </aside>
+
+  <main id="mainContent">
+
+    <div class="hero" id="overview">
+      <span class="hero-badge" style="margin-bottom:10px;display:inline-block;">FIELD GUIDE &middot; WEEK 1 DEEP DIVE</span>
+      <h1>The Business Analyst Field Guide</h1>
+      <p>The ~20% of business analysis an AI Solution Architect must master &mdash; not to write requirements by hand, but to <b>direct, evaluate, and approve</b> what AI-generated requirements produce. Every technique here is demonstrated against one live example: <b>ClaimSwift AI</b>, an AI-powered claims intake initiative at Meridian Mutual Insurance.</p>
+      <div class="hero-badges">
+        <span class="hero-badge">Industry: Insurance (P&amp;C)</span>
+        <span class="hero-badge">9 downloadable deliverables</span>
+        <span class="hero-badge">Offline search + Ask assistant</span>
+      </div>
+    </div>
+
+    <section id="primer">
+      <h2>Why Business Analysis Exists &mdash; and Why It's Now Your Job to Judge It</h2>
+      <p>Business analysis exists to close the gap between <b>what the business needs</b> and <b>what gets built</b>. Every failed software project traces back to the same root cause more often than any other: requirements that were wrong, ambiguous, untestable, or simply never validated with the people who would live with the consequences. A BA's job is to prevent that &mdash; by eliciting real needs, structuring them so nothing is lost in translation, and proving traceability from business goal to shipped feature.</p>
+      <p>As an <b>AI Solution Architect</b>, you will rarely write a user story from a blank page. AI drafting tools will generate BRDs, stories, and acceptance criteria for you in seconds. Your value is no longer in the typing &mdash; it's in the judgment: can you tell a <i>good</i> AI-generated requirement from a <i>dangerous</i> one before it reaches a sprint board? This guide teaches the ~20% of BA craft that makes that judgment possible.</p>
+
+      <div class="callout info">
+        <b>The architect's mandate</b>
+        You are not the BA. You <b>direct</b> what the AI elicits, <b>evaluate</b> what it drafts against the standards on this page, and <b>approve</b> (or send back) before anything becomes a commitment to stakeholders, engineers, or regulators.
+      </div>
+
+      <h3>The 20% That Covers 80% of the Job</h3>
+      <div class="two-col">
+        <div>
+          <h4>Functional vs. Non-Functional Requirements</h4>
+          <p><b>Functional requirements (FR)</b> describe what the system <i>does</i> &mdash; a behavior, a rule, an output. <b>Non-functional requirements (NFR)</b> describe how well it does it &mdash; performance, security, availability, compliance, usability. AI drafts routinely produce strong FRs and weak, vague, or missing NFRs. That gap is exactly where architects earn their keep: an AI-triage engine that classifies claims correctly (FR) but takes 40 seconds per request (missing NFR) will fail in production even though every functional test passes.</p>
+        </div>
+        <div>
+          <h4>Traceability</h4>
+          <p>Every requirement should trace back to a <b>business goal</b> and forward to a <b>test case</b>. If you cannot answer "why does this requirement exist?" and "how will we prove it's done?", the requirement is an orphan &mdash; and orphans are how scope creep and untestable features get through review. See the <a href="#rtm">Requirements Traceability Matrix</a> for how this is enforced end to end.</p>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <h4>User Stories &amp; Acceptance Criteria</h4>
+          <p>The standard shape is <span class="mono">As a &lt;persona&gt;, I want &lt;capability&gt;, so that &lt;benefit&gt;</span>. A story without a benefit clause is a task in disguise &mdash; it tells engineering <i>what</i> to build but gives nobody a way to judge whether it was worth building. Acceptance criteria written as <b>Given / When / Then</b> turn a story into something testable: a precondition, a trigger, an observable outcome. If you can't write the Given/When/Then, the story isn't ready for a sprint.</p>
+        </div>
+        <div>
+          <h4>MoSCoW Prioritization</h4>
+          <p><b>Must</b> have &mdash; the release fails without it. <b>Should</b> have &mdash; important, painful to cut, but not fatal. <b>Could</b> have &mdash; desirable if time allows. <b>Won't</b> have (this time) &mdash; explicitly out of scope, with a reason, so it doesn't quietly resurface as scope creep. A backlog where everything is "Must" has not been prioritized at all &mdash; it's a red flag that the analysis was rubber-stamped, not reasoned through.</p>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <h4>Personas &amp; Use Cases</h4>
+          <p><b>Personas</b> capture goals and frustrations, not demographics &mdash; a persona exists to keep every requirement anchored to a real person's motivation, not an abstract "the user." <b>Use cases</b> describe the full interaction between an actor and the system: not just the happy path, but the alternate paths (valid variations) and exception / unhappy paths (what happens when something goes wrong). AI-generated use cases frequently document only the happy path &mdash; that omission is the single most common gap you will be asked to catch.</p>
+        </div>
+        <div>
+          <h4>KPIs</h4>
+          <p>Key Performance Indicators turn "this will improve things" into a number someone can be held accountable for. Good KPIs are specific, have a baseline, a target, and a measurement cadence. "Improve customer satisfaction" is not a KPI. "Raise first-contact NPS from 21 to 45 within 12 months, measured monthly via post-interaction survey" is.</p>
+        </div>
+      </div>
+
+      <h3>Good Requirement vs. Bad Requirement</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:8%">Trait</th><th style="width:46%">Bad (what AI drafts unsupervised often look like)</th><th style="width:46%">Good (what you should approve)</th></tr></thead>
+          <tbody>
+            <tr><td>Specificity</td><td>"The system should process claims quickly."</td><td>"The system shall auto-assign low-complexity claims to an available adjuster within 4 business hours of FNOL submission."</td></tr>
+            <tr><td>Testability</td><td>"The AI should be accurate."</td><td>"The severity classification model shall achieve &ge;88% agreement with senior-adjuster ground truth, audited quarterly on a 500-claim validation sample."</td></tr>
+            <tr><td>Singularity</td><td>"The system shall capture loss details and notify the adjuster and update the ledger and flag fraud."</td><td>Four separate requirements, each independently testable and independently prioritized.</td></tr>
+            <tr><td>Ownership</td><td>No named source, no rationale.</td><td>Traced to a business goal, a sponsor, and a stakeholder who can accept or reject it.</td></tr>
+            <tr><td>Feasibility language</td><td>"The AI will never misclassify a claim."</td><td>"False-negative severity misclassification shall not exceed 3% on the quarterly validation sample; all misclassifications are logged for adjuster override."</td></tr>
+            <tr><td>NFR coverage</td><td>Silent on performance, security, compliance.</td><td>Explicit, numeric NFRs for latency, availability, data protection, and auditability.</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>The Architect's Review Lens</h3>
+      <p>Use this checklist every time an AI tool (or a human analyst) hands you a requirement, story, or document for approval:</p>
+      <ul class="step-list">
+        <li><b>Traceable</b> &mdash; Does it link to a business goal and a KPI? Would removing it measurably hurt an outcome anyone cares about?</li>
+        <li><b>Testable</b> &mdash; Can QA write a pass/fail test from this sentence alone, with no further clarification?</li>
+        <li><b>Singular</b> &mdash; Is it one requirement, not three joined by "and"?</li>
+        <li><b>Prioritized honestly</b> &mdash; Is the MoSCoW label defensible, or is everything "Must" because nobody wants to have the prioritization conversation?</li>
+        <li><b>Complete on NFRs</b> &mdash; Performance, security, compliance, availability, usability &mdash; addressed or explicitly deferred with a reason?</li>
+        <li><b>Covers the unhappy path</b> &mdash; Does the use case or story account for what happens when data is missing, a system is down, or a human disagrees with the AI?</li>
+        <li><b>Bounded</b> &mdash; Is scope explicit about what's <i>excluded</i>, not just what's included?</li>
+        <li><b>Owned</b> &mdash; Is there a named business owner who can accept the requirement and be accountable for the KPI it drives?</li>
+      </ul>
+
+      <div class="callout warning">
+        <b>Common AI-drafting failure modes to watch for</b>
+        Vague quantifiers ("fast", "user-friendly", "robust") standing in for numbers; every story marked Must; acceptance criteria that restate the story instead of testing it; use cases with no alternate or exception flow; NFRs missing entirely; personas that are demographic sketches instead of goal-and-frustration profiles.
+      </div>
+
+      <p>The rest of this guide demonstrates every one of these techniques against a single running example: <b>ClaimSwift AI</b>, a first-notice-of-loss automation initiative at a fictional regional insurer, Meridian Mutual Insurance. Every deliverable below is downloadable as a standalone, styled document &mdash; the same artifact you would actually receive, review, and sign off on in the field.</p>
+    </section>
+
+    <section id="ask-section">
+      <h2>Ask the Guide</h2>
+      <div class="ask-widget">
+        <h3>Ask a question about this guide</h3>
+        <p style="margin-bottom:14px;color:var(--muted);font-size:.86rem;">Answered entirely offline from the guide's own content &mdash; no external API. Try a question or click a suggestion below.</p>
+        <div class="ask-row">
+          <input type="text" id="askInput" placeholder="e.g. What does MoSCoW mean? What is the ROI of ClaimSwift AI? Who is the sponsor?">
+          <button class="btn btn-primary" id="askBtn">Ask</button>
+        </div>
+        <div class="ask-answer" id="askAnswer">
+          <div class="aq" id="askAnswerQ"></div>
+          <div class="aa" id="askAnswerA"></div>
+          <a href="#" class="jump" id="askAnswerJump">Jump to source section &rarr;</a>
+        </div>
+        <div class="ask-suggestions" id="askSuggestions"></div>
+      </div>
+    </section>
+
+    <section id="exec-summary">
+      <h2>Document 1 &middot; Executive Summary</h2>
+      <div class="doc-toolbar no-print">
+        <button class="btn btn-primary" onclick="downloadDoc('exec-summary-doc','Meridian-Mutual_ClaimSwiftAI_Executive-Summary')">Download standalone HTML</button>
+        <button class="btn btn-outline" onclick="printDoc('exec-summary')">Print / Save as PDF</button>
+      </div>
+      <div class="doc-card" id="exec-summary-doc">
+        <div class="doc-cover">
+          <img class="doc-cover-logo" id="logo-exec" src="" alt="Colaberry">
+          <div class="doc-kicker">Executive Summary</div>
+          <h2>ClaimSwift AI &mdash; AI-Powered FNOL Intake &amp; Triage</h2>
+          <div class="doc-sub">A one-page decision brief for the Meridian Mutual Insurance Executive Committee on funding Phase 1 of the ClaimSwift AI program.</div>
+        </div>
+        <div class="doc-control">
+          <div><label>Document Owner</label><span>Denise Okafor, CCO</span></div>
+          <div><label>Version</label><span>1.3</span></div>
+          <div><label>Status</label><span class="badge badge-pass">Approved for Funding</span></div>
+          <div><label>Date</label><span>2026-07-18</span></div>
+          <div><label>Classification</label><span>Internal &mdash; Executive</span></div>
+        </div>
+        <div class="doc-body">
+          <h3>The Ask</h3>
+          <p>Approve $2.4M in Year-0 capital and $480K in annual run-rate funding to deploy <b>ClaimSwift AI</b>: an AI-powered conversational intake, severity triage, and fraud-signal engine covering Auto and Homeowners First Notice of Loss (FNOL) claims across all six Meridian Mutual regional claims centers.</p>
+
+          <h3>The Problem</h3>
+          <p>FNOL intake at Meridian Mutual is manual, slow, and inconsistent. Callers wait an average of 22.4 minutes to report a loss; claims then sit 4.3 days in an unassigned queue before a human triages severity by hand. Only 6% of claims move through without manual intervention. The result: $8.2M in annual leakage from severity misclassification, a first-contact NPS of 21, and a Special Investigations Unit (SIU) drowning in low-precision fraud referrals (34% precision).</p>
+
+          <h3>The Solution</h3>
+          <p>ClaimSwift AI replaces manual FNOL intake with a conversational AI agent (voice and web chat) that captures structured loss data in one conversation, auto-classifies claim complexity and severity, auto-assigns low-complexity claims directly to available adjusters, and generates an explainable fraud-signal score for every new claim. Human adjusters remain the final authority on every decision &mdash; the AI recommends, adjusters approve or override.</p>
+
+          <div class="kpi-row">
+            <div class="kpi-tile"><div class="kpi-label">FNOL Intake Time</div><div class="kpi-val">22.4 &rarr; 9.0<small style="font-size:.9rem;"> min</small></div><div class="kpi-delta up">&#9660; 60% faster</div></div>
+            <div class="kpi-tile"><div class="kpi-label">Time to First Assignment</div><div class="kpi-val">4.3d &rarr; 4h</div><div class="kpi-delta up">&#9660; 96% faster</div></div>
+            <div class="kpi-tile"><div class="kpi-label">Straight-Through Rate</div><div class="kpi-val">6% &rarr; 35%</div><div class="kpi-delta up">&#9650; 29 pts</div></div>
+            <div class="kpi-tile"><div class="kpi-label">First-Contact NPS</div><div class="kpi-val">21 &rarr; 45</div><div class="kpi-delta up">&#9650; 24 pts</div></div>
+          </div>
+
+          <h3>The Return</h3>
+          <p>Total Year-1 benefit is projected at <b>$6.1M</b> against a Year-0 investment of <b>$2.4M</b> and ongoing run cost of <b>$480K/year</b> &mdash; a payback period of approximately <b>5 months</b> post go-live and a projected 3-year ROI of <b>340%</b>. Full detail is in the <a href="#vision">Vision &amp; Business Case</a>.</p>
+
+          <div class="chart-card">
+            <h4>Year-1 Benefit Composition ($6.1M total)</h4>
+            <svg viewBox="0 0 640 220" role="img" aria-label="Bar chart of Year 1 benefit composition">
+              <g font-size="11" fill="var(--text)">
+                <rect x="60" y="30" width="230" height="26" fill="#367895"></rect>
+                <text x="300" y="48">Adjuster labor efficiency &mdash; $2.3M</text>
+                <rect x="60" y="66" width="190" height="26" fill="#5BA63C"></rect>
+                <text x="260" y="84">Claim leakage reduction &mdash; $1.9M</text>
+                <rect x="60" y="102" width="110" height="26" fill="#FB2832"></rect>
+                <text x="180" y="120">Retention / NPS-driven premium &mdash; $1.1M</text>
+                <rect x="60" y="138" width="80" height="26" fill="#E8920C"></rect>
+                <text x="150" y="156">SIU investigative efficiency &mdash; $0.8M</text>
+              </g>
+              <line x1="60" y1="20" x2="60" y2="176" stroke="var(--border)"></line>
+            </svg>
+          </div>
+
+          <h3>Scope &amp; Guardrails</h3>
+          <ul>
+            <li><b>In scope:</b> Auto and Homeowners FNOL intake, triage, assignment, and fraud-signal referral.</li>
+            <li><b>Out of scope (Phase 1):</b> Commercial Lines, Umbrella, Specialty; automated settlement authority (deferred pending legal review &mdash; see US-15).</li>
+            <li><b>Guardrail:</b> AI never issues a final coverage or settlement decision unsupervised; every auto-triage decision is logged, explainable, and overridable by a licensed adjuster.</li>
+          </ul>
+
+          <h3>Recommendation</h3>
+          <div class="callout success">
+            <b>Recommended decision</b>
+            Approve Phase 1 funding. Target go-live: Q2 2027 for two pilot regional claims centers (Columbus, Dayton), full six-center rollout by Q4 2027.
+          </div>
+        </div>
+        <div class="doc-signoff">
+          <h4>Sign-Off</h4>
+          <div class="signoff-grid">
+            <div class="signoff-box"><label>Prepared By</label><div class="name">Marcus Webb</div><div class="role">VP, Claims Operations</div><div class="sig">M. Webb &mdash; 2026-07-15</div></div>
+            <div class="signoff-box"><label>Reviewed By</label><div class="name">Linda Foster</div><div class="role">VP, Compliance &amp; Regulatory Affairs</div><div class="sig">L. Foster &mdash; 2026-07-17</div></div>
+            <div class="signoff-box"><label>Approved By</label><div class="name">Denise Okafor</div><div class="role">Chief Claims Officer</div><div class="sig">D. Okafor &mdash; 2026-07-18</div></div>
+          </div>
+        </div>
+        <div class="doc-footer">
+          <div><img src="" id="logo-exec-foot" alt="Colaberry">Meridian Mutual Insurance &middot; ClaimSwift AI Program</div>
+          <div>Page 1 of 1 &middot; Confidential &mdash; Internal Use Only</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="vision">
+      <h2>Document 2 &middot; Vision &amp; Business Case</h2>
+      <div class="doc-toolbar no-print">
+        <button class="btn btn-primary" onclick="downloadDoc('vision-doc','Meridian-Mutual_ClaimSwiftAI_Vision-Business-Case')">Download standalone HTML</button>
+        <button class="btn btn-outline" onclick="printDoc('vision')">Print / Save as PDF</button>
+      </div>
+      <div class="doc-card" id="vision-doc">
+        <div class="doc-cover">
+          <img class="doc-cover-logo" id="logo-vision" src="" alt="Colaberry">
+          <div class="doc-kicker">Vision &amp; Business Case</div>
+          <h2>ClaimSwift AI Program</h2>
+          <div class="doc-sub">Why this initiative exists, what future state it creates, and the financial case for funding it.</div>
+        </div>
+        <div class="doc-control">
+          <div><label>Document Owner</label><span>Marcus Webb, VP Claims Ops</span></div>
+          <div><label>Version</label><span>2.1</span></div>
+          <div><label>Status</label><span class="badge badge-pass">Final</span></div>
+          <div><label>Date</label><span>2026-07-10</span></div>
+          <div><label>Classification</label><span>Internal &mdash; Confidential</span></div>
+        </div>
+        <div class="doc-body">
+          <h3>1. Vision Statement</h3>
+          <div class="callout info">
+            <b>Vision</b>
+            "Every Meridian Mutual policyholder reporting a loss is heard immediately, understood accurately, and connected to the right adjuster within hours &mdash; not days &mdash; while every claim decision remains explainable, auditable, and ultimately owned by a licensed human adjuster."
+          </div>
+
+          <h3>2. Business Problem</h3>
+          <p>Meridian Mutual (460,000 active policies; Auto, Homeowners, Renters; 6 regional claims centers; ~$390M paid claims annually) runs FNOL intake as a largely manual, phone-first process built on a 2016-era Guidewire ClaimCenter implementation. As claim volume has grown 18% over three years without proportional headcount growth, four symptoms have become structural risks:</p>
+          <ul>
+            <li>Average FNOL call handle time of 22.4 minutes versus an industry benchmark near 12 minutes.</li>
+            <li>Claims wait an average of 4.3 days for an adjuster assignment, during which evidence quality (photos, witness statements) degrades.</li>
+            <li>Severity misclassification at intake drives an estimated $8.2M/year in claim leakage (2.1% of paid claims).</li>
+            <li>The SIU fraud-referral process is manual and imprecise (34% precision), burning investigator time on low-signal cases while high-signal cases go unflagged.</li>
+          </ul>
+
+          <h3>3. Strategic Alignment</h3>
+          <p>This initiative directly supports two of Meridian Mutual's FY2026&ndash;2028 strategic pillars: <b>"Claims Experience Modernization"</b> (CEO strategic priority #2) and <b>"Loss Ratio Discipline"</b> (CFO strategic priority #1). It is sponsored by the Chief Claims Officer and co-funded by the Claims Operations and Finance organizations.</p>
+
+          <h3>4. Current State &rarr; Future State (at a glance)</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Dimension</th><th>Current State</th><th>Future State (Year 1 target)</th></tr></thead>
+              <tbody>
+                <tr><td>FNOL intake channel</td><td>Phone only, business hours + outsourced after-hours</td><td>AI voice + web chat, 24/7, human escalation available</td></tr>
+                <tr><td>Average intake time</td><td>22.4 minutes</td><td>9.0 minutes</td></tr>
+                <tr><td>Time to adjuster assignment</td><td>4.3 days (manual queue review)</td><td>4 hours for low-complexity claims (auto-assigned)</td></tr>
+                <tr><td>Straight-through processing rate</td><td>6%</td><td>35% (low-complexity claims)</td></tr>
+                <tr><td>Claim leakage (severity misclassification)</td><td>$8.2M/year</td><td>$7.1M/year (&minus;$1.1M)</td></tr>
+                <tr><td>First-contact NPS</td><td>21</td><td>45</td></tr>
+                <tr><td>SIU fraud referral precision</td><td>34%</td><td>55%</td></tr>
+                <tr><td>Average adjuster caseload</td><td>145 open claims</td><td>108 open claims</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>5. Financial Case</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Line Item</th><th>Year 0 (Build)</th><th>Year 1</th><th>Year 2</th><th>Year 3</th></tr></thead>
+              <tbody>
+                <tr><td>Platform license &amp; integration</td><td class="mono">$1,550,000</td><td class="mono">$480,000</td><td class="mono">$495,000</td><td class="mono">$510,000</td></tr>
+                <tr><td>Change management &amp; training</td><td class="mono">$350,000</td><td class="mono">$60,000</td><td class="mono">$40,000</td><td class="mono">$40,000</td></tr>
+                <tr><td>Internal delivery team</td><td class="mono">$500,000</td><td class="mono">&mdash;</td><td class="mono">&mdash;</td><td class="mono">&mdash;</td></tr>
+                <tr><td><b>Total Cost</b></td><td class="mono"><b>$2,400,000</b></td><td class="mono"><b>$540,000</b></td><td class="mono"><b>$535,000</b></td><td class="mono"><b>$550,000</b></td></tr>
+                <tr><td>Labor efficiency benefit</td><td class="mono">&mdash;</td><td class="mono">$2,300,000</td><td class="mono">$2,400,000</td><td class="mono">$2,500,000</td></tr>
+                <tr><td>Claim leakage reduction</td><td class="mono">&mdash;</td><td class="mono">$1,900,000</td><td class="mono">$2,600,000</td><td class="mono">$2,900,000</td></tr>
+                <tr><td>Retention / NPS-driven premium</td><td class="mono">&mdash;</td><td class="mono">$1,100,000</td><td class="mono">$1,500,000</td><td class="mono">$1,700,000</td></tr>
+                <tr><td>SIU investigative efficiency</td><td class="mono">&mdash;</td><td class="mono">$800,000</td><td class="mono">$950,000</td><td class="mono">$1,000,000</td></tr>
+                <tr><td><b>Total Benefit</b></td><td class="mono"><b>&mdash;</b></td><td class="mono"><b>$6,100,000</b></td><td class="mono"><b>$7,450,000</b></td><td class="mono"><b>$8,100,000</b></td></tr>
+                <tr><td><b>Net Position</b></td><td class="mono" style="color:var(--cherry);"><b>&minus;$2,400,000</b></td><td class="mono" style="color:var(--leaf);"><b>+$5,560,000</b></td><td class="mono" style="color:var(--leaf);"><b>+$6,915,000</b></td><td class="mono" style="color:var(--leaf);"><b>+$7,550,000</b></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div class="chart-grid">
+            <div class="chart-card">
+              <h4>Cumulative Net Position (3-Year)</h4>
+              <svg viewBox="0 0 420 220" role="img" aria-label="Line chart of cumulative net financial position over three years">
+                <line x1="50" y1="180" x2="400" y2="180" stroke="var(--border)"></line>
+                <line x1="50" y1="20" x2="50" y2="180" stroke="var(--border)"></line>
+                <line x1="50" y1="120" x2="400" y2="120" stroke="var(--border)" stroke-dasharray="3,3"></line>
+                <text x="10" y="124" font-size="10" fill="var(--muted)">$0</text>
+                <text x="0" y="24" font-size="10" fill="var(--muted)">$16M</text>
+                <text x="0" y="182" font-size="10" fill="var(--muted)">-$3M</text>
+                <polyline points="70,150 155,35 240,20 325,10" fill="none" stroke="#5BA63C" stroke-width="3"></polyline>
+                <circle cx="70" cy="150" r="4" fill="#FB2832"></circle>
+                <circle cx="155" cy="35" r="4" fill="#5BA63C"></circle>
+                <circle cx="240" cy="20" r="4" fill="#5BA63C"></circle>
+                <circle cx="325" cy="10" r="4" fill="#5BA63C"></circle>
+                <text x="55" y="200" font-size="11" fill="var(--text)">Y0</text>
+                <text x="145" y="200" font-size="11" fill="var(--text)">Y1</text>
+                <text x="230" y="200" font-size="11" fill="var(--text)">Y2</text>
+                <text x="315" y="200" font-size="11" fill="var(--text)">Y3</text>
+                <text x="75" y="140" font-size="10" fill="var(--cherry)">&minus;$2.4M</text>
+                <text x="130" y="55" font-size="10" fill="var(--leaf)">+$3.2M</text>
+                <text x="215" y="40" font-size="10" fill="var(--leaf)">+$10.1M</text>
+                <text x="300" y="30" font-size="10" fill="var(--leaf)">+$17.7M</text>
+              </svg>
+            </div>
+            <div class="chart-card">
+              <h4>Year-1 Claim Volume by Complexity (post-triage)</h4>
+              <svg viewBox="0 0 260 220" role="img" aria-label="Donut chart of claim complexity mix">
+                <g transform="translate(130,105)">
+                  <circle r="70" fill="none" stroke="#E4E4E3" stroke-width="26"></circle>
+                  <circle r="70" fill="none" stroke="#5BA63C" stroke-width="26" stroke-dasharray="153.9 286.5" stroke-dashoffset="0" transform="rotate(-90)"></circle>
+                  <circle r="70" fill="none" stroke="#367895" stroke-width="26" stroke-dasharray="123.1 317.3" stroke-dashoffset="-153.9" transform="rotate(-90)"></circle>
+                  <circle r="70" fill="none" stroke="#FB2832" stroke-width="26" stroke-dasharray="163.4 277.0" stroke-dashoffset="-277.0" transform="rotate(-90)"></circle>
+                  <text text-anchor="middle" y="6" font-size="16" font-weight="700" fill="var(--text)">440M</text>
+                  <text text-anchor="middle" y="22" font-size="9" fill="var(--muted)">claims / yr</text>
+                </g>
+                <g font-size="10" fill="var(--text)">
+                  <rect x="10" y="196" width="10" height="10" fill="#5BA63C"></rect><text x="24" y="205">Low (35%, auto-triaged)</text>
+                </g>
+              </svg>
+              <div class="tag-list">
+                <span class="tag-pill" style="color:#5BA63C;">&#9632; Low complexity &mdash; 35%</span>
+                <span class="tag-pill" style="color:#367895;">&#9632; Medium complexity &mdash; 28%</span>
+                <span class="tag-pill" style="color:#FB2832;">&#9632; High complexity &mdash; 37%</span>
+              </div>
+            </div>
+          </div>
+
+          <h3>6. Options Considered</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Option</th><th>Description</th><th>Decision</th></tr></thead>
+              <tbody>
+                <tr><td>A &mdash; Do nothing</td><td>Continue manual intake; absorb leakage and NPS risk</td><td><span class="badge badge-wont">Rejected</span> &mdash; leakage trend is worsening with volume growth</td></tr>
+                <tr><td>B &mdash; Headcount expansion</td><td>Hire 40 additional intake staff to reduce queue time</td><td><span class="badge badge-wont">Rejected</span> &mdash; addresses symptom, not root cause; no leakage or fraud-precision benefit</td></tr>
+                <tr><td>C &mdash; ClaimSwift AI (recommended)</td><td>AI conversational intake + triage + fraud signal, human-in-the-loop</td><td><span class="badge badge-pass">Selected</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>7. Risks &amp; Assumptions</h3>
+          <ul>
+            <li><b>Risk:</b> Model bias in severity or fraud scoring could create disparate impact across protected classes. <i>Mitigation:</i> monthly fairness audit (see NFR-08).</li>
+            <li><b>Risk:</b> Policyholder trust in AI-led intake is unproven at Meridian Mutual. <i>Mitigation:</i> always-available human escalation; phased pilot before full rollout.</li>
+            <li><b>Assumption:</b> Guidewire ClaimCenter exposes a stable API for real-time claim creation and policy verification (confirmed with IT, June 2026).</li>
+          </ul>
+        </div>
+        <div class="doc-signoff">
+          <h4>Sign-Off</h4>
+          <div class="signoff-grid">
+            <div class="signoff-box"><label>Prepared By</label><div class="name">Marcus Webb</div><div class="role">VP, Claims Operations</div><div class="sig">M. Webb &mdash; 2026-07-08</div></div>
+            <div class="signoff-box"><label>Reviewed By</label><div class="name">CFO Office &mdash; FP&amp;A</div><div class="role">Financial Planning &amp; Analysis</div><div class="sig">FP&amp;A &mdash; 2026-07-09</div></div>
+            <div class="signoff-box"><label>Approved By</label><div class="name">Denise Okafor</div><div class="role">Chief Claims Officer</div><div class="sig">D. Okafor &mdash; 2026-07-10</div></div>
+          </div>
+        </div>
+        <div class="doc-footer">
+          <div><img src="" id="logo-vision-foot" alt="Colaberry">Meridian Mutual Insurance &middot; ClaimSwift AI Program</div>
+          <div>Page 1 of 1 &middot; Confidential &mdash; Internal Use Only</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="brd">
+      <h2>Document 3 &middot; Business Requirements Document (BRD)</h2>
+      <div class="doc-toolbar no-print">
+        <button class="btn btn-primary" onclick="downloadDoc('brd-doc','Meridian-Mutual_ClaimSwiftAI_BRD')">Download standalone HTML</button>
+        <button class="btn btn-outline" onclick="printDoc('brd')">Print / Save as PDF</button>
+      </div>
+      <div class="doc-card" id="brd-doc">
+        <div class="doc-cover">
+          <img class="doc-cover-logo" id="logo-brd" src="" alt="Colaberry">
+          <div class="doc-kicker">Business Requirements Document</div>
+          <h2>ClaimSwift AI &mdash; FNOL Intake, Triage &amp; Fraud Signal</h2>
+          <div class="doc-sub">Phase 1: Auto &amp; Homeowners lines, all six Meridian Mutual regional claims centers.</div>
+        </div>
+        <div class="doc-control">
+          <div><label>Document Owner</label><span>Angela Cho, Sr. BA Lead</span></div>
+          <div><label>Version</label><span>3.0</span></div>
+          <div><label>Status</label><span class="badge badge-pass">Approved Baseline</span></div>
+          <div><label>Date</label><span>2026-07-22</span></div>
+          <div><label>Classification</label><span>Internal &mdash; Confidential</span></div>
+        </div>
+        <div class="doc-body">
+          <h3>1. Purpose &amp; Scope</h3>
+          <p>This BRD defines the business requirements for ClaimSwift AI Phase 1: an AI-powered conversational intake, severity/complexity triage, auto-assignment, and fraud-signal engine for Auto and Homeowners First Notice of Loss (FNOL) claims. It is the requirements baseline against which the <a href="#user-stories">User Stories</a>, <a href="#use-cases">Use Cases</a>, and <a href="#rtm">Requirements Traceability Matrix</a> are built.</p>
+          <div class="callout warning">
+            <b>Out of scope &mdash; Phase 1</b>
+            Commercial Lines, Umbrella, and Specialty policies; automated settlement authority of any dollar amount (see US-15, deferred pending legal review of delegated settlement authority); claims already assigned to an adjuster prior to go-live (no retroactive re-triage).
+          </div>
+
+          <h3>2. Business Objectives</h3>
+          <ul>
+            <li>Reduce average FNOL intake time from 22.4 to 9.0 minutes within 12 months of full rollout.</li>
+            <li>Raise straight-through processing (STP) rate for low-complexity claims from 6% to 35%.</li>
+            <li>Reduce annual claim leakage attributable to severity misclassification by $1.1M in Year 1.</li>
+            <li>Improve SIU fraud-referral precision from 34% to 55%.</li>
+            <li>Raise first-contact NPS from 21 to 45.</li>
+          </ul>
+
+          <h3>3. Functional Requirements</h3>
+          <p>Each functional requirement is written to be independently testable and traces to a user story in the <a href="#user-stories">User Stories</a> document and a row in the <a href="#rtm">Traceability Matrix</a>.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th style="width:7%">ID</th><th style="width:8%">Priority</th><th>Requirement</th><th style="width:12%">Traces To</th></tr></thead>
+              <tbody>
+                <tr><td class="mono"><span class="badge badge-fr">FR-01</span></td><td><span class="badge badge-must">Must</span></td><td>The system shall capture policy number, loss date/time, loss type, and loss location through a single AI-guided conversational intake session (voice or web chat), without requiring the policyholder to repeat information already provided.</td><td class="mono">US-01</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-02</span></td><td><span class="badge badge-must">Must</span></td><td>The system shall confirm, in plain language, the policyholder's applicable coverage and deductible during the intake conversation before the session ends.</td><td class="mono">US-02</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-03</span></td><td><span class="badge badge-should">Should</span></td><td>The system shall send an SMS link allowing the policyholder to upload photo or video evidence of damage during or immediately after the intake session.</td><td class="mono">US-03</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-04</span></td><td><span class="badge badge-must">Must</span></td><td>The system shall auto-classify each new claim's complexity as Low, Medium, or High using loss type, estimated severity, and policy coverage data, within 60 seconds of intake completion.</td><td class="mono">US-04</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-05</span></td><td><span class="badge badge-must">Must</span></td><td>The system shall auto-assign Low-complexity claims to the next available adjuster according to regional load-balancing rules, without manual queue review.</td><td class="mono">US-05</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-06</span></td><td><span class="badge badge-should">Should</span></td><td>The system shall display, for every AI severity/complexity classification, a confidence score (0&ndash;100%) and the top three contributing factors in adjuster-facing language.</td><td class="mono">US-06</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-07</span></td><td><span class="badge badge-must">Must</span></td><td>The system shall allow a licensed adjuster to override any AI severity or complexity classification, requiring selection of a documented reason code before the override is saved.</td><td class="mono">US-07</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-08</span></td><td><span class="badge badge-must">Must</span></td><td>The system shall generate a fraud-signal score (0&ndash;100) with named contributing indicators for every new claim at intake completion.</td><td class="mono">US-08</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-09</span></td><td><span class="badge badge-should">Should</span></td><td>The system shall provide a plain-language explanation for each fraud indicator contributing to a claim's fraud-signal score, viewable by SIU analysts.</td><td class="mono">US-09</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-10</span></td><td><span class="badge badge-could">Could</span></td><td>The system shall allow SIU analysts to record a referral outcome (confirmed fraud / false positive) against each fraud-signal referral for quarterly model retraining.</td><td class="mono">US-10</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-11</span></td><td><span class="badge badge-must">Must</span></td><td>The system shall log every AI-driven claim decision (triage, assignment, fraud score) with the input data, model version, and rationale, retained for 7 years and retrievable within 5 business days of a regulatory request.</td><td class="mono">US-11</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-12</span></td><td><span class="badge badge-must">Must</span></td><td>The system shall produce a monthly disparate-impact report comparing AI triage outcomes across protected class proxies, reviewable by the Compliance office.</td><td class="mono">US-12</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-13</span></td><td><span class="badge badge-should">Should</span></td><td>The system shall provide Regional Claims Managers a real-time dashboard of queue depth, STP rate, and per-adjuster caseload.</td><td class="mono">US-13</td></tr>
+                <tr><td class="mono"><span class="badge badge-fr">FR-14</span></td><td><span class="badge badge-could">Could</span></td><td>The system shall send proactive SMS status updates to the policyholder at each major claim milestone (received, assigned, under review, decision issued).</td><td class="mono">US-14</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>4. Non-Functional Requirements</h3>
+          <p>Non-functional requirements are frequently the weakest part of an AI-drafted requirements set. Each one below is numeric and independently verifiable &mdash; this is the standard an architect should hold every NFR to before approving it.</p>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th style="width:9%">ID</th><th style="width:12%">Category</th><th>Requirement</th><th style="width:10%">Priority</th></tr></thead>
+              <tbody>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-01</span></td><td>Performance</td><td>AI intake response latency shall not exceed 2 seconds per conversational turn, 95th percentile, measured continuously in production.</td><td><span class="badge badge-must">Must</span></td></tr>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-02</span></td><td>Availability</td><td>The AI intake channel (voice and chat) shall maintain 99.9% uptime, excluding a published Sunday 2&ndash;4am ET maintenance window.</td><td><span class="badge badge-must">Must</span></td></tr>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-03</span></td><td>Scalability</td><td>The system shall support 3,500 concurrent FNOL sessions during catastrophe (CAT) surge events, 10x the normal daily average of 350 sessions.</td><td><span class="badge badge-must">Must</span></td></tr>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-04</span></td><td>Security</td><td>All claim and policyholder data shall be encrypted at rest (AES-256) and in transit (TLS 1.3); access shall be role-based and reviewed quarterly.</td><td><span class="badge badge-must">Must</span></td></tr>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-05</span></td><td>Compliance</td><td>Every auto-triage decision shall generate a retained, retrievable explainability record satisfying Ohio DOI fair-claims-handling audit requirements (7-year retention).</td><td><span class="badge badge-must">Must</span></td></tr>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-06</span></td><td>Usability</td><td>The AI intake conversation shall achieve a &ge;90% completion rate without escalation to a human agent, for claims later classified Low complexity.</td><td><span class="badge badge-should">Should</span></td></tr>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-07</span></td><td>Model Accuracy</td><td>The severity/complexity classification model shall achieve &ge;88% agreement with senior-adjuster ground truth on a quarterly 500-claim validation sample.</td><td><span class="badge badge-must">Must</span></td></tr>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-08</span></td><td>Fairness</td><td>Model disparate-impact ratio shall remain within 0.8&ndash;1.25 (four-fifths rule) across protected-class proxies, reviewed monthly by Compliance.</td><td><span class="badge badge-must">Must</span></td></tr>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-09</span></td><td>Recoverability</td><td>The ClaimSwift AI platform shall meet a Recovery Point Objective (RPO) of 15 minutes and a Recovery Time Objective (RTO) of 2 hours.</td><td><span class="badge badge-should">Should</span></td></tr>
+                <tr><td class="mono"><span class="badge badge-nfr">NFR-10</span></td><td>Localization</td><td>AI intake shall support English and Spanish at launch, covering &ge;99% of the policyholder base's preferred language.</td><td><span class="badge badge-should">Should</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>5. Assumptions, Constraints &amp; Dependencies</h3>
+          <ul>
+            <li><b>Assumption:</b> Guidewire ClaimCenter and PolicyCenter expose stable, documented APIs for real-time claim creation and coverage verification.</li>
+            <li><b>Constraint:</b> No automated final coverage or settlement decision may be issued without licensed-adjuster review, per state adjuster-licensing statute.</li>
+            <li><b>Dependency:</b> SMS evidence upload (FR-03) depends on the existing Twilio contract held by the Marketing organization; a data-sharing agreement is required before build.</li>
+            <li><b>Constraint:</b> Spanish-language intake (NFR-10) requires a certified insurance-domain translation review before go-live, not just machine translation.</li>
+          </ul>
+
+          <h3>6. Glossary</h3>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th style="width:20%">Term</th><th>Definition</th></tr></thead>
+              <tbody>
+                <tr><td class="mono">FNOL</td><td>First Notice of Loss &mdash; the initial report a policyholder makes to start a claim.</td></tr>
+                <tr><td class="mono">STP</td><td>Straight-Through Processing &mdash; a claim that moves from intake to adjuster assignment with no manual triage step.</td></tr>
+                <tr><td class="mono">SIU</td><td>Special Investigations Unit &mdash; the team that investigates suspected fraudulent claims.</td></tr>
+                <tr><td class="mono">Leakage</td><td>Claim payments above the amount that accurate severity assessment would have produced.</td></tr>
+                <tr><td class="mono">CAT event</td><td>Catastrophe event (e.g., regional hailstorm) causing a surge in simultaneous claim volume.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="doc-signoff">
+          <h4>Sign-Off</h4>
+          <div class="signoff-grid">
+            <div class="signoff-box"><label>Prepared By</label><div class="name">Angela Cho</div><div class="role">Senior Business Analyst Lead</div><div class="sig">A. Cho &mdash; 2026-07-20</div></div>
+            <div class="signoff-box"><label>Reviewed By</label><div class="name">Priya Natarajan</div><div class="role">Senior Auto Claims Adjuster (SME)</div><div class="sig">P. Natarajan &mdash; 2026-07-21</div></div>
+            <div class="signoff-box"><label>Approved By</label><div class="name">Marcus Webb</div><div class="role">VP, Claims Operations</div><div class="sig">M. Webb &mdash; 2026-07-22</div></div>
+          </div>
+        </div>
+        <div class="doc-footer">
+          <div><img src="" id="logo-brd-foot" alt="Colaberry">Meridian Mutual Insurance &middot; ClaimSwift AI Program</div>
+          <div>Page 1 of 1 &middot; Confidential &mdash; Internal Use Only</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="user-stories">
+      <h2>Document 4 &middot; User Stories &amp; Acceptance Criteria</h2>
+      <div class="doc-toolbar no-print">
+        <button class="btn btn-primary" onclick="downloadDoc('user-stories-doc','Meridian-Mutual_ClaimSwiftAI_User-Stories')">Download standalone HTML</button>
+        <button class="btn btn-outline" onclick="printDoc('user-stories')">Print / Save as PDF</button>
+        <button class="btn btn-ghost" onclick="downloadCSV('userStoriesTable','Meridian-Mutual_ClaimSwiftAI_User-Stories')">Download CSV</button>
+      </div>
+      <div class="doc-card" id="user-stories-doc">
+        <div class="doc-cover">
+          <img class="doc-cover-logo" id="logo-us" src="" alt="Colaberry">
+          <div class="doc-kicker">User Stories &amp; Acceptance Criteria</div>
+          <h2>ClaimSwift AI &mdash; Backlog v1</h2>
+          <div class="doc-sub">15 stories across 6 epics, prioritized MoSCoW, each with Given/When/Then acceptance criteria.</div>
+        </div>
+        <div class="doc-control">
+          <div><label>Document Owner</label><span>Angela Cho, Sr. BA Lead</span></div>
+          <div><label>Version</label><span>1.4</span></div>
+          <div><label>Status</label><span class="badge badge-pass">Ready for Sprint Planning</span></div>
+          <div><label>Date</label><span>2026-07-25</span></div>
+          <div><label>Classification</label><span>Internal</span></div>
+        </div>
+        <div class="doc-body">
+          <p>Format: <span class="mono">As a &lt;persona&gt;, I want &lt;capability&gt;, so that &lt;benefit&gt;</span>. Every story carries at least one Given/When/Then acceptance test. Priority uses MoSCoW; see the <a href="#primer">Discipline Primer</a> for definitions.</p>
+
+          <div class="chart-card">
+            <h4>Backlog Priority Mix (15 stories)</h4>
+            <svg viewBox="0 0 520 180" role="img" aria-label="Bar chart of MoSCoW priority distribution across 15 user stories">
+              <g font-size="12" fill="var(--text)">
+                <text x="10" y="24">Must (7)</text>
+                <rect x="110" y="10" width="326" height="22" fill="#FB2832"></rect>
+                <text x="10" y="58">Should (4)</text>
+                <rect x="110" y="44" width="186" height="22" fill="#367895"></rect>
+                <text x="10" y="92">Could (3)</text>
+                <rect x="110" y="78" width="140" height="22" fill="#5BA63C"></rect>
+                <text x="10" y="126">Won't (1)</text>
+                <rect x="110" y="112" width="47" height="22" fill="#6B6B6B"></rect>
+              </g>
+            </svg>
+          </div>
+
+          <h4>Epic A &mdash; AI Conversational FNOL Intake</h4>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-01</span><span class="badge badge-must">Must</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>policyholder</b>, I want to report a claim via a conversational AI voice/chat agent, so that I don't have to wait on hold to start my claim.</div>
+              <div class="gwt"><b>Given</b> a policyholder calls the FNOL line or opens web chat, <b>when</b> they describe the loss in natural language, <b>then</b> the AI captures policy number, loss date/time, loss type, and location within one session without asking the policyholder to repeat information already given.</div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-02</span><span class="badge badge-must">Must</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>policyholder</b>, I want the AI to confirm my coverage in plain language during intake, so that I know what to expect before I hang up.</div>
+              <div class="gwt"><b>Given</b> a policy is successfully matched during intake, <b>when</b> the AI completes loss-detail capture, <b>then</b> it states applicable coverage type and deductible in plain language before ending the session.</div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-03</span><span class="badge badge-should">Should</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>policyholder</b>, I want to upload photos of damage via a text-message link during intake, so that my adjuster has evidence before they're even assigned.</div>
+              <div class="gwt"><b>Given</b> intake has captured a mobile number, <b>when</b> the session ends, <b>then</b> the policyholder receives an SMS upload link valid for 72 hours.</div>
+            </div>
+          </div>
+
+          <h4>Epic B &mdash; Auto-Triage &amp; Severity Classification</h4>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-04</span><span class="badge badge-must">Must</span></div>
+            <div class="story-body">
+              <div class="as">As the <b>ClaimSwift AI engine</b>, I want to auto-classify claim complexity (Low/Medium/High), so that low-complexity claims can bypass manual triage.</div>
+              <div class="gwt"><b>Given</b> a completed intake record, <b>when</b> the classification model runs, <b>then</b> a complexity label and confidence score are attached to the claim within 60 seconds.</div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-05</span><span class="badge badge-must">Must</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>Claims Manager</b>, I want auto-classified Low-complexity claims auto-assigned to the next available adjuster, so that queue time drops without manual load-balancing.</div>
+              <div class="gwt"><b>Given</b> a claim is classified Low complexity, <b>when</b> classification completes, <b>then</b> the claim is assigned to an adjuster with capacity within 4 business hours, respecting regional caseload limits.</div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-15</span><span class="badge badge-wont">Won't (this release)</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>Claims Manager</b>, I want the AI to auto-negotiate settlement offers under $2,500 without adjuster review, so that trivial claims close same-day.</div>
+              <div class="gwt"><b>Deferred:</b> requires legal review of delegated settlement authority under state adjuster-licensing statute; targeted for Phase 2 evaluation, not Phase 1 scope.</div>
+            </div>
+          </div>
+
+          <h4>Epic C &mdash; Adjuster Workbench &amp; Override</h4>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-06</span><span class="badge badge-should">Should</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>Senior Adjuster</b>, I want to see the AI's confidence score and top contributing factors, so that I can quickly validate or challenge a classification.</div>
+              <div class="gwt"><b>Given</b> a claim has an AI complexity classification, <b>when</b> an adjuster opens the claim, <b>then</b> the workbench displays the confidence score and top 3 contributing factors in plain language.</div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-07</span><span class="badge badge-must">Must</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>Senior Adjuster</b>, I want to override an AI classification with a required reason code, so that human judgment remains the final authority.</div>
+              <div class="gwt"><b>Given</b> an adjuster disagrees with an AI classification, <b>when</b> they select "Override," <b>then</b> the system requires a reason code before saving and logs the override with adjuster ID and timestamp.</div>
+            </div>
+          </div>
+
+          <h4>Epic D &mdash; Fraud Signal &amp; SIU Referral</h4>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-08</span><span class="badge badge-must">Must</span></div>
+            <div class="story-body">
+              <div class="as">As the <b>ClaimSwift AI engine</b>, I want to generate a fraud-signal score for every new claim, so that SIU can prioritize investigation.</div>
+              <div class="gwt"><b>Given</b> a completed intake record, <b>when</b> classification completes, <b>then</b> a fraud-signal score (0&ndash;100) with named contributing indicators is attached to the claim.</div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-09</span><span class="badge badge-should">Should</span></div>
+            <div class="story-body">
+              <div class="as">As an <b>SIU Analyst</b>, I want plain-language explanations for each fraud indicator, so that I can trust and act on a referral quickly.</div>
+              <div class="gwt"><b>Given</b> a claim has a fraud-signal score above the referral threshold (70), <b>when</b> an analyst opens the referral, <b>then</b> each contributing indicator is shown with a one-sentence explanation.</div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-10</span><span class="badge badge-could">Could</span></div>
+            <div class="story-body">
+              <div class="as">As an <b>SIU Analyst</b>, I want to submit feedback on referral accuracy, so that the model improves over subsequent quarters.</div>
+              <div class="gwt"><b>Given</b> an SIU investigation is closed, <b>when</b> the analyst records the outcome, <b>then</b> "confirmed fraud" or "false positive" is logged against the original referral for the next model retraining cycle.</div>
+            </div>
+          </div>
+
+          <h4>Epic E &mdash; Compliance, Audit &amp; Explainability</h4>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-11</span><span class="badge badge-must">Must</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>Compliance Officer</b>, I want every AI-driven decision logged with inputs, model version, and rationale, so that we can respond to DOI audits within 5 business days.</div>
+              <div class="gwt"><b>Given</b> any AI-driven claim decision, <b>when</b> the decision is made, <b>then</b> a retrievable audit record is created and retained for 7 years.</div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-12</span><span class="badge badge-must">Must</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>Compliance Officer</b>, I want AI triage outcomes monitored monthly for disparate impact, so that the model complies with fair-claims-handling regulation.</div>
+              <div class="gwt"><b>Given</b> a calendar month of triage decisions, <b>when</b> the monitoring job runs, <b>then</b> a disparate-impact report is generated and flagged if any protected-class ratio falls outside 0.8&ndash;1.25.</div>
+            </div>
+          </div>
+
+          <h4>Epic F &mdash; Reporting &amp; Policyholder Communication</h4>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-13</span><span class="badge badge-should">Should</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>Regional Claims Manager</b>, I want a real-time dashboard of queue depth, STP rate, and adjuster caseload, so that I can rebalance workload without a manual spreadsheet.</div>
+              <div class="gwt"><b>Given</b> claims are actively being triaged and assigned, <b>when</b> a manager opens the dashboard, <b>then</b> queue depth, STP rate, and per-adjuster caseload refresh at least every 5 minutes.</div>
+            </div>
+          </div>
+          <div class="story-card">
+            <div class="story-head"><span class="sid">US-14</span><span class="badge badge-could">Could</span></div>
+            <div class="story-body">
+              <div class="as">As a <b>policyholder</b>, I want proactive SMS status updates at each claim milestone, so that I don't have to call in for status.</div>
+              <div class="gwt"><b>Given</b> a claim reaches a milestone (received, assigned, under review, decision issued), <b>when</b> the milestone is recorded, <b>then</b> an SMS is sent within 15 minutes to the policyholder's number on file.</div>
+            </div>
+          </div>
+
+          <h4>CSV-Ready Table View</h4>
+          <div class="table-wrap">
+            <table id="userStoriesTable">
+              <thead><tr><th>ID</th><th>Epic</th><th>Priority</th><th>As a</th><th>I want</th><th>So that</th><th>Given</th><th>When</th><th>Then</th></tr></thead>
+              <tbody>
+                <tr><td>US-01</td><td>A - AI Intake</td><td>Must</td><td>Policyholder</td><td>report a claim via conversational AI</td><td>I don't wait on hold</td><td>Policyholder calls or opens chat</td><td>They describe the loss in natural language</td><td>AI captures policy #, loss date/time, type, location in one session</td></tr>
+                <tr><td>US-02</td><td>A - AI Intake</td><td>Must</td><td>Policyholder</td><td>hear coverage confirmed in plain language</td><td>I know what to expect</td><td>Policy matched during intake</td><td>Loss-detail capture completes</td><td>AI states coverage &amp; deductible before session ends</td></tr>
+                <tr><td>US-03</td><td>A - AI Intake</td><td>Should</td><td>Policyholder</td><td>upload photos via SMS link</td><td>adjuster has evidence pre-assignment</td><td>Mobile number captured</td><td>Session ends</td><td>SMS upload link sent, valid 72 hours</td></tr>
+                <tr><td>US-04</td><td>B - Triage</td><td>Must</td><td>AI engine</td><td>auto-classify claim complexity</td><td>low-complexity claims bypass manual triage</td><td>Completed intake record</td><td>Classification model runs</td><td>Complexity label + confidence attached within 60s</td></tr>
+                <tr><td>US-05</td><td>B - Triage</td><td>Must</td><td>Claims Manager</td><td>auto-assign Low claims to next available adjuster</td><td>queue time drops</td><td>Claim classified Low</td><td>Classification completes</td><td>Assigned within 4 business hours per load rules</td></tr>
+                <tr><td>US-15</td><td>B - Triage</td><td>Won't</td><td>Claims Manager</td><td>AI auto-negotiates settlements under $2,500</td><td>trivial claims close same-day</td><td>n/a</td><td>n/a</td><td>Deferred to Phase 2 pending legal review</td></tr>
+                <tr><td>US-06</td><td>C - Workbench</td><td>Should</td><td>Senior Adjuster</td><td>see AI confidence + top factors</td><td>quickly validate or challenge classification</td><td>Claim has AI classification</td><td>Adjuster opens claim</td><td>Confidence score + top 3 factors shown</td></tr>
+                <tr><td>US-07</td><td>C - Workbench</td><td>Must</td><td>Senior Adjuster</td><td>override AI classification with reason code</td><td>human judgment remains final authority</td><td>Adjuster disagrees with classification</td><td>Adjuster selects Override</td><td>Reason code required; override logged with ID/timestamp</td></tr>
+                <tr><td>US-08</td><td>D - Fraud Signal</td><td>Must</td><td>AI engine</td><td>generate fraud-signal score per claim</td><td>SIU prioritizes investigation</td><td>Completed intake record</td><td>Classification completes</td><td>Score 0-100 + indicators attached</td></tr>
+                <tr><td>US-09</td><td>D - Fraud Signal</td><td>Should</td><td>SIU Analyst</td><td>see plain-language indicator explanations</td><td>trust and act on referrals quickly</td><td>Score above referral threshold (70)</td><td>Analyst opens referral</td><td>Each indicator shown with 1-sentence explanation</td></tr>
+                <tr><td>US-10</td><td>D - Fraud Signal</td><td>Could</td><td>SIU Analyst</td><td>submit referral accuracy feedback</td><td>model improves over quarters</td><td>SIU investigation closed</td><td>Analyst records outcome</td><td>Outcome logged for next retraining cycle</td></tr>
+                <tr><td>US-11</td><td>E - Compliance</td><td>Must</td><td>Compliance Officer</td><td>log every AI decision with inputs/version/rationale</td><td>respond to DOI audits within 5 business days</td><td>Any AI-driven decision</td><td>Decision made</td><td>Audit record created, retained 7 years</td></tr>
+                <tr><td>US-12</td><td>E - Compliance</td><td>Must</td><td>Compliance Officer</td><td>monitor triage for disparate impact monthly</td><td>comply with fair-claims-handling regulation</td><td>A calendar month of decisions</td><td>Monitoring job runs</td><td>Report generated; flags if ratio outside 0.8-1.25</td></tr>
+                <tr><td>US-13</td><td>F - Reporting</td><td>Should</td><td>Regional Claims Manager</td><td>see real-time queue/STP/caseload dashboard</td><td>rebalance workload without spreadsheets</td><td>Claims actively triaged/assigned</td><td>Manager opens dashboard</td><td>Metrics refresh at least every 5 minutes</td></tr>
+                <tr><td>US-14</td><td>F - Reporting</td><td>Could</td><td>Policyholder</td><td>get proactive SMS status updates</td><td>I don't have to call for status</td><td>Claim reaches a milestone</td><td>Milestone recorded</td><td>SMS sent within 15 minutes</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="doc-signoff">
+          <h4>Sign-Off</h4>
+          <div class="signoff-grid">
+            <div class="signoff-box"><label>Prepared By</label><div class="name">Angela Cho</div><div class="role">Senior Business Analyst Lead</div><div class="sig">A. Cho &mdash; 2026-07-24</div></div>
+            <div class="signoff-box"><label>Reviewed By</label><div class="name">Priya Natarajan</div><div class="role">Senior Auto Claims Adjuster (SME)</div><div class="sig">P. Natarajan &mdash; 2026-07-24</div></div>
+            <div class="signoff-box"><label>Approved By</label><div class="name">Marcus Webb</div><div class="role">VP, Claims Operations</div><div class="sig">M. Webb &mdash; 2026-07-25</div></div>
+          </div>
+        </div>
+        <div class="doc-footer">
+          <div><img src="" id="logo-us-foot" alt="Colaberry">Meridian Mutual Insurance &middot; ClaimSwift AI Program</div>
+          <div>Page 1 of 1 &middot; Confidential &mdash; Internal Use Only</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="use-cases">
+      <h2>Document 5 &middot; Use Cases</h2>
+      <div class="doc-toolbar no-print">
+        <button class="btn btn-primary" onclick="downloadDoc('use-cases-doc','Meridian-Mutual_ClaimSwiftAI_Use-Cases')">Download standalone HTML</button>
+        <button class="btn btn-outline" onclick="printDoc('use-cases')">Print / Save as PDF</button>
+      </div>
+      <div class="doc-card" id="use-cases-doc">
+        <div class="doc-cover">
+          <img class="doc-cover-logo" id="logo-uc" src="" alt="Colaberry">
+          <div class="doc-kicker">Use Case Specification</div>
+          <h2>ClaimSwift AI &mdash; Core Use Cases</h2>
+          <div class="doc-sub">Four use cases spanning intake through fraud referral, each with main, alternate, and exception flows.</div>
+        </div>
+        <div class="doc-control">
+          <div><label>Document Owner</label><span>Angela Cho, Sr. BA Lead</span></div>
+          <div><label>Version</label><span>1.2</span></div>
+          <div><label>Status</label><span class="badge badge-pass">Approved</span></div>
+          <div><label>Date</label><span>2026-07-26</span></div>
+          <div><label>Classification</label><span>Internal</span></div>
+        </div>
+        <div class="doc-body">
+
+          <div class="uc-block" id="uc-1">
+            <div class="uc-head"><b>UC-1 &middot; Submit FNOL via AI Conversational Intake</b><span>Primary actor: Policyholder &middot; Supporting actor: ClaimSwift AI Engine</span></div>
+            <div class="uc-meta">
+              <div><label>Trigger</label>Policyholder calls the claims line or opens web chat to report a loss</div>
+              <div><label>Precondition</label>Policyholder has an active or recently lapsed policy on file</div>
+              <div><label>Postcondition</label>A structured claim record exists in ClaimCenter, ready for triage</div>
+            </div>
+            <div class="uc-body">
+              <h5>Main Flow</h5>
+              <ol>
+                <li>Policyholder initiates contact via phone or web chat.</li>
+                <li>AI greets the policyholder and asks for policy number or verifying details (name + address).</li>
+                <li>AI verifies the policy against PolicyCenter in real time.</li>
+                <li>AI asks the policyholder to describe what happened, in their own words.</li>
+                <li>AI extracts loss type, date/time, and location from the conversation, confirming ambiguous details.</li>
+                <li>AI confirms applicable coverage and deductible in plain language.</li>
+                <li>AI creates a structured claim record in ClaimCenter and provides the policyholder a claim number.</li>
+                <li>AI sends an SMS evidence-upload link (FR-03) and closes the session.</li>
+              </ol>
+              <h5>Alternate Flow A1 &mdash; Escalation to Human Agent</h5>
+              <div class="uc-alt">At any point, the policyholder may say "talk to a person." The AI summarizes captured details, transfers the session (with context) to the next available human intake agent, and logs the escalation reason.</div>
+              <h5>Alternate Flow A2 &mdash; Multiple Losses in One Call</h5>
+              <div class="uc-alt">If the policyholder describes two unrelated losses (e.g., a windshield claim and a separate water-damage claim), the AI opens two independent claim records and confirms both claim numbers before ending the session.</div>
+              <h5>Exception Flow E1 &mdash; Policy Not Found or Lapsed</h5>
+              <div class="uc-exc">If PolicyCenter returns no active match, the AI does not fabricate a claim record. It informs the policyholder a specialist will follow up within one business hour, logs a manual-review ticket, and ends the session without creating a claim.</div>
+              <h5>Exception Flow E2 &mdash; Low-Confidence Extraction</h5>
+              <div class="uc-exc">If the AI cannot extract loss type or location with sufficient confidence after two clarifying questions, it flags the claim "manual review required" and routes to a human intake agent rather than guessing.</div>
+            </div>
+          </div>
+
+          <div class="diagram-card">
+            <h4 style="margin-top:0;color:var(--berry);font-size:.95rem;text-transform:uppercase;letter-spacing:.04em;">Sequence Diagram &mdash; UC-1 Main Flow</h4>
+            <svg viewBox="0 0 720 340" role="img" aria-label="Sequence diagram showing policyholder, AI intake, policy system, claim system, and adjuster interactions">
+              <g font-size="11" fill="var(--text)" font-family="Roboto Mono, monospace">
+                <text x="60" y="20" text-anchor="middle" font-weight="700">Policyholder</text>
+                <text x="220" y="20" text-anchor="middle" font-weight="700">ClaimSwift AI</text>
+                <text x="380" y="20" text-anchor="middle" font-weight="700">PolicyCenter</text>
+                <text x="540" y="20" text-anchor="middle" font-weight="700">ClaimCenter</text>
+                <text x="670" y="20" text-anchor="middle" font-weight="700">Adjuster</text>
+              </g>
+              <line x1="60" y1="30" x2="60" y2="320" stroke="var(--border)"></line>
+              <line x1="220" y1="30" x2="220" y2="320" stroke="var(--border)"></line>
+              <line x1="380" y1="30" x2="380" y2="320" stroke="var(--border)"></line>
+              <line x1="540" y1="30" x2="540" y2="320" stroke="var(--border)"></line>
+              <line x1="670" y1="30" x2="670" y2="320" stroke="var(--border)"></line>
+              <g font-size="10.5" fill="var(--text)">
+                <line x1="60" y1="50" x2="220" y2="50" stroke="var(--berry)" stroke-width="1.5" marker-end="url(#arrow)"></line>
+                <text x="65" y="45">1. reports loss (voice/chat)</text>
+                <line x1="220" y1="80" x2="380" y2="80" stroke="var(--berry)" stroke-width="1.5" marker-end="url(#arrow)"></line>
+                <text x="225" y="75">2. verify policy</text>
+                <line x1="380" y1="105" x2="220" y2="105" stroke="#5BA63C" stroke-width="1.5" marker-end="url(#arrow)"></line>
+                <text x="225" y="100">3. coverage &amp; deductible</text>
+                <line x1="220" y1="130" x2="60" y2="130" stroke="#5BA63C" stroke-width="1.5" marker-end="url(#arrow)"></line>
+                <text x="65" y="125">4. confirms coverage (plain language)</text>
+                <line x1="60" y1="155" x2="220" y2="155" stroke="var(--berry)" stroke-width="1.5" marker-end="url(#arrow)"></line>
+                <text x="65" y="150">5. describes loss details</text>
+                <line x1="220" y1="185" x2="540" y2="185" stroke="var(--berry)" stroke-width="1.5" marker-end="url(#arrow)"></line>
+                <text x="225" y="180">6. create structured claim record</text>
+                <line x1="540" y1="210" x2="220" y2="210" stroke="#5BA63C" stroke-width="1.5" marker-end="url(#arrow)"></line>
+                <text x="225" y="205">7. claim number</text>
+                <line x1="220" y1="235" x2="60" y2="235" stroke="#5BA63C" stroke-width="1.5" marker-end="url(#arrow)"></line>
+                <text x="65" y="230">8. claim # + SMS evidence link</text>
+                <line x1="540" y1="265" x2="670" y2="265" stroke="#FB2832" stroke-width="1.5" marker-end="url(#arrow)"></line>
+                <text x="480" y="260">9. notify (post-triage, see UC-2)</text>
+                <rect x="200" y="285" width="360" height="30" rx="6" fill="rgba(54,120,149,.08)" stroke="var(--berry)" stroke-dasharray="2,2"></rect>
+                <text x="380" y="304" text-anchor="middle" fill="var(--berry)">Every AI decision logged with model version + rationale (NFR-05)</text>
+              </g>
+              <defs>
+                <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--berry)"></path></marker>
+              </defs>
+            </svg>
+          </div>
+
+          <div class="uc-block" id="uc-2">
+            <div class="uc-head"><b>UC-2 &middot; AI Auto-Triage &amp; Severity Classification</b><span>Primary actor: ClaimSwift AI Engine &middot; Supporting actor: Claims Adjuster</span></div>
+            <div class="uc-meta">
+              <div><label>Trigger</label>A structured claim record is created (end of UC-1)</div>
+              <div><label>Precondition</label>Claim contains complete loss type, coverage, and estimated severity inputs</div>
+              <div><label>Postcondition</label>Claim carries a complexity classification and, if Low, an adjuster assignment</div>
+            </div>
+            <div class="uc-body">
+              <h5>Main Flow</h5>
+              <ol>
+                <li>Classification model reads the structured claim record.</li>
+                <li>Model computes a complexity label (Low/Medium/High) and a confidence score.</li>
+                <li>System attaches the classification, confidence score, and top 3 contributing factors to the claim.</li>
+                <li>If classified Low, the assignment engine identifies the next available adjuster within regional caseload limits.</li>
+                <li>Claim is auto-assigned; adjuster receives a notification with the AI-prefilled worksheet.</li>
+              </ol>
+              <h5>Alternate Flow A1 &mdash; Medium/High Complexity Routing</h5>
+              <div class="uc-alt">If classified Medium or High, the claim routes to a Senior Adjuster queue instead of auto-assignment, with the AI worksheet pre-filled but assignment left to the Regional Claims Manager.</div>
+              <h5>Alternate Flow A2 &mdash; Adjuster Override</h5>
+              <div class="uc-alt">An adjuster may override the classification (see US-07); the override reason code is logged and included in the next quarterly model accuracy review.</div>
+              <h5>Exception Flow E1 &mdash; Incomplete Claim Data</h5>
+              <div class="uc-exc">If required fields (loss type, coverage match) are missing or the policy is flagged lapsed, classification is held. The claim is placed in a "data incomplete" queue and the policyholder is notified a specialist will follow up.</div>
+              <h5>Exception Flow E2 &mdash; Assignment Engine Unavailable</h5>
+              <div class="uc-exc">If the auto-assignment service is down, the claim retains its Low-complexity classification but falls back to the manual assignment worksheet used pre-ClaimSwift, so no claim is silently stuck unassigned.</div>
+            </div>
+          </div>
+
+          <div class="uc-block" id="uc-3">
+            <div class="uc-head"><b>UC-3 &middot; Fraud Signal Referral to SIU</b><span>Primary actor: ClaimSwift AI Engine &middot; Supporting actor: SIU Analyst</span></div>
+            <div class="uc-meta">
+              <div><label>Trigger</label>Claim completes intake and classification</div>
+              <div><label>Precondition</label>Fraud-signal model has sufficient claim and policy history data</div>
+              <div><label>Postcondition</label>High-score claims are referred to SIU with an explainability report</div>
+            </div>
+            <div class="uc-body">
+              <h5>Main Flow</h5>
+              <ol>
+                <li>Fraud-signal model scores the claim 0&ndash;100 using claim details, policy tenure, and historical patterns.</li>
+                <li>If the score exceeds the referral threshold (70), the claim is auto-referred to the SIU queue.</li>
+                <li>System generates a plain-language explainability report listing contributing indicators.</li>
+                <li>SIU analyst reviews the referral and opens or declines a formal investigation.</li>
+                <li>Analyst records the outcome (confirmed fraud / false positive) against the referral.</li>
+              </ol>
+              <h5>Alternate Flow A1 &mdash; Analyst Disputes Score</h5>
+              <div class="uc-alt">If the analyst believes the score is unwarranted, they record "false positive" immediately with a note; the case is excluded from active investigation but retained for quarterly model retraining (US-10).</div>
+              <h5>Exception Flow E1 &mdash; Insufficient Evidence Data</h5>
+              <div class="uc-exc">If key inputs (e.g., prior claim history) are unavailable due to a data outage, the model does not force a score. The claim is flagged "fraud score pending" and re-scored automatically once data is available.</div>
+            </div>
+          </div>
+
+          <div class="uc-block" id="uc-4">
+            <div class="uc-head"><b>UC-4 &middot; Adjuster Reviews AI-Recommended Assignment</b><span>Primary actor: Claims Adjuster</span></div>
+            <div class="uc-meta">
+              <div><label>Trigger</label>Claim is auto-assigned or routed to an adjuster's queue</div>
+              <div><label>Precondition</label>Adjuster is logged into the ClaimSwift-enabled workbench</div>
+              <div><label>Postcondition</label>Adjuster has accepted or overridden the AI recommendation and begun claim handling</div>
+            </div>
+            <div class="uc-body">
+              <h5>Main Flow</h5>
+              <ol>
+                <li>Adjuster opens the assigned claim in the workbench.</li>
+                <li>Workbench displays AI classification, confidence score, contributing factors, and fraud-signal status.</li>
+                <li>Adjuster reviews evidence (photos, policyholder narrative) alongside the AI summary.</li>
+                <li>Adjuster accepts the AI classification and reserve recommendation.</li>
+                <li>Adjuster proceeds with standard claim handling and settlement.</li>
+              </ol>
+              <h5>Alternate Flow A1 &mdash; Adjuster Overrides Classification</h5>
+              <div class="uc-alt">Adjuster selects "Override," chooses a reason code (e.g., "evidence contradicts AI severity estimate"), and the claim is re-routed to the appropriate complexity queue (see UC-2 A1).</div>
+              <h5>Exception Flow E1 &mdash; Workbench/AI Service Unavailable</h5>
+              <div class="uc-exc">If the AI service is down when the adjuster opens the claim, the workbench displays a clear "AI unavailable &mdash; manual worksheet" banner and falls back to the pre-ClaimSwift paper worksheet fields, so claim handling is never blocked by a system outage.</div>
+            </div>
+          </div>
+
+        </div>
+        <div class="doc-signoff">
+          <h4>Sign-Off</h4>
+          <div class="signoff-grid">
+            <div class="signoff-box"><label>Prepared By</label><div class="name">Angela Cho</div><div class="role">Senior Business Analyst Lead</div><div class="sig">A. Cho &mdash; 2026-07-25</div></div>
+            <div class="signoff-box"><label>Reviewed By</label><div class="name">David Okonkwo</div><div class="role">SIU Lead (SME)</div><div class="sig">D. Okonkwo &mdash; 2026-07-26</div></div>
+            <div class="signoff-box"><label>Approved By</label><div class="name">Marcus Webb</div><div class="role">VP, Claims Operations</div><div class="sig">M. Webb &mdash; 2026-07-26</div></div>
+          </div>
+        </div>
+        <div class="doc-footer">
+          <div><img src="" id="logo-uc-foot" alt="Colaberry">Meridian Mutual Insurance &middot; ClaimSwift AI Program</div>
+          <div>Page 1 of 1 &middot; Confidential &mdash; Internal Use Only</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="personas">
+      <h2>Document 6 &middot; Personas</h2>
+      <div class="doc-toolbar no-print">
+        <button class="btn btn-primary" onclick="downloadDoc('personas-doc','Meridian-Mutual_ClaimSwiftAI_Personas')">Download standalone HTML</button>
+        <button class="btn btn-outline" onclick="printDoc('personas')">Print / Save as PDF</button>
+      </div>
+      <div class="doc-card" id="personas-doc">
+        <div class="doc-cover">
+          <img class="doc-cover-logo" id="logo-per" src="" alt="Colaberry">
+          <div class="doc-kicker">Persona Profiles</div>
+          <h2>ClaimSwift AI &mdash; Five People This Program Serves</h2>
+          <div class="doc-sub">Built from goals and frustrations, not demographics &mdash; every requirement in this guide should be traceable to one of these five.</div>
+        </div>
+        <div class="doc-control">
+          <div><label>Document Owner</label><span>Angela Cho, Sr. BA Lead</span></div>
+          <div><label>Version</label><span>1.1</span></div>
+          <div><label>Status</label><span class="badge badge-pass">Final</span></div>
+          <div><label>Date</label><span>2026-07-05</span></div>
+          <div><label>Classification</label><span>Internal</span></div>
+        </div>
+        <div class="doc-body">
+          <div class="persona-grid">
+
+            <div class="persona-card">
+              <div class="persona-head">
+                <div class="persona-avatar">PN</div>
+                <div><b>Priya Natarajan</b><span>Senior Auto Claims Adjuster &middot; 9 years</span></div>
+              </div>
+              <div class="persona-body">
+                <h5>Goals</h5>
+                <ul><li>Close valid, simple claims fast so more time goes to complex, high-value cases.</li><li>Trust that AI-suggested severity is defensible if a claim is ever disputed or audited.</li><li>Keep her caseload below 110 claims so quality doesn't slip.</li></ul>
+                <h5>Frustrations</h5>
+                <ul><li>Re-keying the same loss details a policyholder already told the call center.</li><li>Chasing missing documents by phone and email instead of handling claims.</li><li>Low-value claims (a cracked windshield) eating the same review time as a total-loss claim.</li></ul>
+                <div class="persona-quote">"If the AI can hand me a claim that's already 80% documented, I'll close it before lunch instead of chasing paperwork for three days."</div>
+              </div>
+            </div>
+
+            <div class="persona-card">
+              <div class="persona-head">
+                <div class="persona-avatar">TR</div>
+                <div><b>Tom Reeves</b><span>Homeowner policyholder &middot; filing a burst-pipe claim</span></div>
+              </div>
+              <div class="persona-body">
+                <h5>Goals</h5>
+                <ul><li>Get acknowledged fast &mdash; his basement is actively flooding.</li><li>Understand, in plain terms, what's covered before a stranger walks through his house.</li><li>Avoid repeating his story to five different people.</li></ul>
+                <h5>Frustrations</h5>
+                <ul><li>Being on hold during a genuine emergency.</li><li>Uncertainty about deductibles until an adjuster calls back days later.</li><li>Having to describe the same incident over and over to different agents.</li></ul>
+                <div class="persona-quote">"I don't need a friend on the phone. I need someone &mdash; or something &mdash; that gets my claim moving in the next five minutes."</div>
+              </div>
+            </div>
+
+            <div class="persona-card">
+              <div class="persona-head">
+                <div class="persona-avatar">AC</div>
+                <div><b>Angela Cho</b><span>Regional Claims Center Manager &middot; Columbus</span></div>
+              </div>
+              <div class="persona-body">
+                <h5>Goals</h5>
+                <ul><li>Keep her team's SLA and NPS numbers green without burning out adjusters.</li><li>See workload distribution in real time instead of reconstructing it from spreadsheets each morning.</li><li>Defend her staffing plan to the VP with real data.</li></ul>
+                <h5>Frustrations</h5>
+                <ul><li>Manually eyeballing an unassigned-claims queue every morning and guessing who has capacity.</li><li>No visibility into queue backlog until it's already a problem.</li><li>Reactive, not proactive, workload balancing.</li></ul>
+                <div class="persona-quote">"I shouldn't have to build a pivot table to find out my team is drowning."</div>
+              </div>
+            </div>
+
+            <div class="persona-card">
+              <div class="persona-head">
+                <div class="persona-avatar">DO</div>
+                <div><b>David Okonkwo</b><span>SIU Lead &middot; Special Investigations Unit</span></div>
+              </div>
+              <div class="persona-body">
+                <h5>Goals</h5>
+                <ul><li>Spend investigative hours on claims that are actually likely to be fraudulent.</li><li>Understand <i>why</i> a claim was flagged, not just that it was.</li><li>Build a defensible case file if a referral escalates to prosecution.</li></ul>
+                <h5>Frustrations</h5>
+                <ul><li>Two-thirds of current referrals turn out to be false positives &mdash; wasted investigative hours.</li><li>No explainability behind today's rules-based flags.</li><li>High-signal claims sometimes go unflagged because the rules are too rigid.</li></ul>
+                <div class="persona-quote">"Give me the reason behind the score and I'll trust it. A number with no story behind it is just noise."</div>
+              </div>
+            </div>
+
+            <div class="persona-card">
+              <div class="persona-head">
+                <div class="persona-avatar">LF</div>
+                <div><b>Linda Foster</b><span>VP, Compliance &amp; Regulatory Affairs</span></div>
+              </div>
+              <div class="persona-body">
+                <h5>Goals</h5>
+                <ul><li>Answer any Ohio DOI audit request within the 5-business-day window without a fire drill.</li><li>Prove the AI model doesn't systematically disadvantage any protected class.</li><li>Keep a human decision-maker accountable for every adverse claim outcome.</li></ul>
+                <h5>Frustrations</h5>
+                <ul><li>Vendor AI tools that can't explain a single decision after the fact.</li><li>No standing process for fairness monitoring on the current manual triage process either.</li><li>Being looped in after a system is already built, not during design.</li></ul>
+                <div class="persona-quote">"If I can't produce the record in five days, it doesn't matter how accurate the model is &mdash; we still have a problem with the regulator."</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div class="doc-signoff">
+          <h4>Sign-Off</h4>
+          <div class="signoff-grid">
+            <div class="signoff-box"><label>Prepared By</label><div class="name">Angela Cho</div><div class="role">Senior Business Analyst Lead</div><div class="sig">A. Cho &mdash; 2026-07-04</div></div>
+            <div class="signoff-box"><label>Reviewed By</label><div class="name">Priya Natarajan</div><div class="role">Senior Auto Claims Adjuster (SME)</div><div class="sig">P. Natarajan &mdash; 2026-07-05</div></div>
+            <div class="signoff-box"><label>Approved By</label><div class="name">Marcus Webb</div><div class="role">VP, Claims Operations</div><div class="sig">M. Webb &mdash; 2026-07-05</div></div>
+          </div>
+        </div>
+        <div class="doc-footer">
+          <div><img src="" id="logo-per-foot" alt="Colaberry">Meridian Mutual Insurance &middot; ClaimSwift AI Program</div>
+          <div>Page 1 of 1 &middot; Confidential &mdash; Internal Use Only</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="stakeholders">
+      <h2>Document 7 &middot; Stakeholder Matrix</h2>
+      <div class="doc-toolbar no-print">
+        <button class="btn btn-primary" onclick="downloadDoc('stakeholders-doc','Meridian-Mutual_ClaimSwiftAI_Stakeholder-Matrix')">Download standalone HTML</button>
+        <button class="btn btn-outline" onclick="printDoc('stakeholders')">Print / Save as PDF</button>
+        <button class="btn btn-ghost" onclick="downloadCSV('stakeholderTable','Meridian-Mutual_ClaimSwiftAI_Stakeholder-Matrix')">Download CSV</button>
+      </div>
+      <div class="doc-card" id="stakeholders-doc">
+        <div class="doc-cover">
+          <img class="doc-cover-logo" id="logo-sh" src="" alt="Colaberry">
+          <div class="doc-kicker">Stakeholder Matrix</div>
+          <h2>ClaimSwift AI &mdash; Power / Interest Analysis</h2>
+          <div class="doc-sub">Twelve stakeholder groups, mapped to engagement strategy by power and interest.</div>
+        </div>
+        <div class="doc-control">
+          <div><label>Document Owner</label><span>Angela Cho, Sr. BA Lead</span></div>
+          <div><label>Version</label><span>1.1</span></div>
+          <div><label>Status</label><span class="badge badge-pass">Final</span></div>
+          <div><label>Date</label><span>2026-07-06</span></div>
+          <div><label>Classification</label><span>Internal</span></div>
+        </div>
+        <div class="doc-body">
+          <div class="diagram-card">
+            <h4 style="margin-top:0;color:var(--berry);font-size:.95rem;text-transform:uppercase;letter-spacing:.04em;">Power / Interest Grid</h4>
+            <svg viewBox="0 0 620 460" role="img" aria-label="Power interest grid plotting twelve stakeholders">
+              <rect x="70" y="20" width="260" height="200" fill="rgba(251,40,50,.06)"></rect>
+              <rect x="330" y="20" width="220" height="200" fill="rgba(54,120,149,.06)"></rect>
+              <rect x="70" y="220" width="260" height="200" fill="rgba(107,107,107,.05)"></rect>
+              <rect x="330" y="220" width="220" height="200" fill="rgba(91,166,60,.06)"></rect>
+              <line x1="70" y1="20" x2="70" y2="420" stroke="var(--text)" stroke-width="1.5"></line>
+              <line x1="70" y1="420" x2="550" y2="420" stroke="var(--text)" stroke-width="1.5"></line>
+              <g font-size="10.5" font-weight="700" fill="var(--muted)">
+                <text x="80" y="36">KEEP SATISFIED</text>
+                <text x="465" y="36" text-anchor="end">MANAGE CLOSELY</text>
+                <text x="80" y="412">MONITOR</text>
+                <text x="465" y="412" text-anchor="end">KEEP INFORMED</text>
+              </g>
+              <text x="20" y="220" font-size="11" fill="var(--muted)" transform="rotate(-90,20,220)" text-anchor="middle">POWER &rarr;</text>
+              <text x="310" y="445" font-size="11" fill="var(--muted)" text-anchor="middle">INTEREST &rarr;</text>
+
+              <g font-size="9.5" fill="var(--text)" font-family="Roboto Mono, monospace">
+                <circle cx="245" cy="70" r="7" fill="#FB2832"></circle><text x="256" y="73">Denise Okafor, CCO</text>
+                <circle cx="255" cy="95" r="7" fill="#FB2832"></circle><text x="266" y="98">Marcus Webb, VP Claims Ops</text>
+                <circle cx="150" cy="80" r="7" fill="#367895"></circle><text x="161" y="83">Linda Foster, VP Compliance</text>
+                <circle cx="140" cy="105" r="7" fill="#367895"></circle><text x="151" y="108">IT / Enterprise Architecture</text>
+                <circle cx="160" cy="130" r="7" fill="#367895"></circle><text x="171" y="133">CFO Office (Finance)</text>
+                <circle cx="105" cy="55" r="7" fill="#367895"></circle><text x="116" y="58">State Dept. of Insurance</text>
+                <circle cx="270" cy="255" r="7" fill="#5BA63C"></circle><text x="281" y="258">Angela Cho, Regional Manager</text>
+                <circle cx="260" cy="280" r="7" fill="#5BA63C"></circle><text x="271" y="283">David Okonkwo, SIU Lead</text>
+                <circle cx="120" cy="330" r="7" fill="#6B6B6B"></circle><text x="131" y="333">Guidewire vendor / SI partner</text>
+                <circle cx="180" cy="260" r="7" fill="#5BA63C"></circle><text x="191" y="263">Alorica (call center partner)</text>
+                <circle cx="290" cy="330" r="7" fill="#5BA63C"></circle><text x="301" y="333">Priya Natarajan (adjuster rep)</text>
+                <circle cx="310" cy="360" r="7" fill="#5BA63C"></circle><text x="321" y="363">Policyholders (customer base)</text>
+              </g>
+            </svg>
+          </div>
+
+          <h3>Stakeholder Register</h3>
+          <div class="table-wrap">
+            <table id="stakeholderTable">
+              <thead><tr><th>Stakeholder</th><th>Role</th><th>Power</th><th>Interest</th><th>Quadrant</th><th>Engagement Approach</th></tr></thead>
+              <tbody>
+                <tr><td>Denise Okafor</td><td>Chief Claims Officer &mdash; Executive Sponsor</td><td>High</td><td>High</td><td>Manage Closely</td><td>Weekly steering updates; final approval authority on scope and funding.</td></tr>
+                <tr><td>Marcus Webb</td><td>VP, Claims Operations &mdash; Business Owner</td><td>High</td><td>High</td><td>Manage Closely</td><td>Co-leads program with BA lead; owns benefit realization.</td></tr>
+                <tr><td>Linda Foster</td><td>VP, Compliance &amp; Regulatory Affairs</td><td>High</td><td>Medium</td><td>Keep Satisfied</td><td>Monthly compliance review; veto authority on explainability &amp; fairness gates.</td></tr>
+                <tr><td>IT / Enterprise Architecture</td><td>CTO Office</td><td>High</td><td>Medium</td><td>Keep Satisfied</td><td>Architecture review board sign-off on integration design.</td></tr>
+                <tr><td>CFO Office</td><td>Finance &amp; FP&amp;A</td><td>High</td><td>Medium</td><td>Keep Satisfied</td><td>Quarterly benefit-realization reporting against business case.</td></tr>
+                <tr><td>State Dept. of Insurance</td><td>External Regulator</td><td>High</td><td>Low</td><td>Keep Satisfied</td><td>No direct engagement; audit-readiness maintained per NFR-05.</td></tr>
+                <tr><td>Angela Cho</td><td>Regional Claims Center Manager</td><td>Medium</td><td>High</td><td>Keep Informed</td><td>Pilot site lead; weekly operational feedback loop.</td></tr>
+                <tr><td>David Okonkwo</td><td>SIU Lead</td><td>Medium</td><td>High</td><td>Keep Informed</td><td>Co-designs fraud-signal explainability requirements (US-09).</td></tr>
+                <tr><td>Guidewire / SI Partner</td><td>Implementation Vendor</td><td>Medium</td><td>Low</td><td>Monitor</td><td>Contract-managed delivery milestones; biweekly status check-in.</td></tr>
+                <tr><td>Alorica</td><td>Outsourced After-Hours Call Center</td><td>Medium</td><td>Medium</td><td>Keep Informed</td><td>Process change briefing before go-live; updated intake scripts.</td></tr>
+                <tr><td>Priya Natarajan</td><td>Senior Adjuster (Adjuster Representative)</td><td>Low</td><td>High</td><td>Keep Informed</td><td>User acceptance testing lead; adjuster-workbench feedback channel.</td></tr>
+                <tr><td>Policyholders</td><td>Customer Base (460,000 policies)</td><td>Low</td><td>High</td><td>Keep Informed</td><td>Represented via NPS survey data and pilot-region focus groups.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="doc-signoff">
+          <h4>Sign-Off</h4>
+          <div class="signoff-grid">
+            <div class="signoff-box"><label>Prepared By</label><div class="name">Angela Cho</div><div class="role">Senior Business Analyst Lead</div><div class="sig">A. Cho &mdash; 2026-07-05</div></div>
+            <div class="signoff-box"><label>Reviewed By</label><div class="name">Marcus Webb</div><div class="role">VP, Claims Operations</div><div class="sig">M. Webb &mdash; 2026-07-06</div></div>
+            <div class="signoff-box"><label>Approved By</label><div class="name">Denise Okafor</div><div class="role">Chief Claims Officer</div><div class="sig">D. Okafor &mdash; 2026-07-06</div></div>
+          </div>
+        </div>
+        <div class="doc-footer">
+          <div><img src="" id="logo-sh-foot" alt="Colaberry">Meridian Mutual Insurance &middot; ClaimSwift AI Program</div>
+          <div>Page 1 of 1 &middot; Confidential &mdash; Internal Use Only</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="process">
+      <h2>Document 8 &middot; Current-State &amp; Future-State Process</h2>
+      <div class="doc-toolbar no-print">
+        <button class="btn btn-primary" onclick="downloadDoc('process-doc','Meridian-Mutual_ClaimSwiftAI_Process-Maps')">Download standalone HTML</button>
+        <button class="btn btn-outline" onclick="printDoc('process')">Print / Save as PDF</button>
+      </div>
+      <div class="doc-card" id="process-doc">
+        <div class="doc-cover">
+          <img class="doc-cover-logo" id="logo-proc" src="" alt="Colaberry">
+          <div class="doc-kicker">Process Maps</div>
+          <h2>ClaimSwift AI &mdash; FNOL to Assignment</h2>
+          <div class="doc-sub">Current-state manual process versus future-state AI-assisted process, with the same nine intake-to-assignment steps.</div>
+        </div>
+        <div class="doc-control">
+          <div><label>Document Owner</label><span>Angela Cho, Sr. BA Lead</span></div>
+          <div><label>Version</label><span>1.2</span></div>
+          <div><label>Status</label><span class="badge badge-pass">Final</span></div>
+          <div><label>Date</label><span>2026-07-12</span></div>
+          <div><label>Classification</label><span>Internal</span></div>
+        </div>
+        <div class="doc-body">
+
+          <h3>Current State &mdash; Manual FNOL Intake</h3>
+          <div class="diagram-card">
+            <svg viewBox="0 0 760 200" role="img" aria-label="Current state process flow diagram, ten manual steps">
+              <g font-size="9.5" fill="#fff" text-anchor="middle" font-family="Roboto">
+                <rect x="10" y="70" width="82" height="56" rx="8" fill="#6B6B6B"></rect><text x="51" y="94">Policyholder</text><text x="51" y="107">calls line</text>
+                <rect x="106" y="70" width="82" height="56" rx="8" fill="#6B6B6B"></rect><text x="147" y="94">IVR routes</text><text x="147" y="107">to agent</text>
+                <rect x="202" y="70" width="82" height="56" rx="8" fill="#6B6B6B"></rect><text x="243" y="88">Agent</text><text x="243" y="100">manually</text><text x="243" y="112">keys loss data</text>
+                <rect x="298" y="70" width="82" height="56" rx="8" fill="#E8920C"></rect><text x="339" y="94">Claim sits in</text><text x="339" y="107">unassigned queue</text>
+                <rect x="394" y="70" width="82" height="56" rx="8" fill="#6B6B6B"></rect><text x="435" y="88">Manager</text><text x="435" y="100">manually</text><text x="435" y="112">reviews queue</text>
+                <rect x="490" y="70" width="82" height="56" rx="8" fill="#6B6B6B"></rect><text x="531" y="88">Adjuster</text><text x="531" y="100">chases missing</text><text x="531" y="112">documents</text>
+                <rect x="586" y="70" width="82" height="56" rx="8" fill="#6B6B6B"></rect><text x="627" y="88">Adjuster</text><text x="627" y="100">estimates</text><text x="627" y="112">severity by hand</text>
+                <rect x="682" y="70" width="70" height="56" rx="8" fill="#FB2832"></rect><text x="717" y="88">Manual</text><text x="717" y="100">fraud screen,</text><text x="717" y="112">email to SIU</text>
+              </g>
+              <g stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arrowC)">
+                <line x1="92" y1="98" x2="104" y2="98"></line>
+                <line x1="188" y1="98" x2="200" y2="98"></line>
+                <line x1="284" y1="98" x2="296" y2="98"></line>
+                <line x1="380" y1="98" x2="392" y2="98"></line>
+                <line x1="476" y1="98" x2="488" y2="98"></line>
+                <line x1="572" y1="98" x2="584" y2="98"></line>
+                <line x1="668" y1="98" x2="680" y2="98"></line>
+              </g>
+              <text x="380" y="155" text-anchor="middle" font-size="11" fill="var(--cherry)" font-weight="700">Average elapsed time: 22.4 min intake + 4.3 days to assignment</text>
+              <defs><marker id="arrowC" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)"></path></marker></defs>
+            </svg>
+          </div>
+          <ol class="step-list">
+            <li>Policyholder calls the contact center to report a loss.</li>
+            <li>IVR routes the call to an available agent (or the after-hours outsourced partner, Alorica).</li>
+            <li>Agent manually keys loss details into ClaimCenter while the policyholder is on the line.</li>
+            <li>Claim sits in an unassigned queue &mdash; average wait 4.3 days.</li>
+            <li>Claims Manager manually reviews the queue each morning and assigns claims by rough region and line of business.</li>
+            <li>Adjuster reviews the claim and chases missing documents by phone and email.</li>
+            <li>Adjuster manually estimates severity and sets a reserve.</li>
+            <li>Adjuster manually screens for fraud indicators and refers suspicious claims to SIU by email.</li>
+            <li>SIU manually investigates every referral, regardless of signal strength (34% precision).</li>
+            <li>Adjuster negotiates settlement and closes the claim.</li>
+          </ol>
+
+          <h3>Future State &mdash; ClaimSwift AI-Assisted Intake</h3>
+          <div class="diagram-card">
+            <svg viewBox="0 0 760 200" role="img" aria-label="Future state process flow diagram with AI-assisted steps">
+              <g font-size="9.5" fill="#fff" text-anchor="middle" font-family="Roboto">
+                <rect x="10" y="70" width="82" height="56" rx="8" fill="#367895"></rect><text x="51" y="88">Policyholder</text><text x="51" y="100">engages AI</text><text x="51" y="112">24/7</text>
+                <rect x="106" y="70" width="82" height="56" rx="8" fill="#5BA63C"></rect><text x="147" y="88">AI verifies</text><text x="147" y="100">policy &amp;</text><text x="147" y="112">coverage</text>
+                <rect x="202" y="70" width="82" height="56" rx="8" fill="#5BA63C"></rect><text x="243" y="88">AI classifies</text><text x="243" y="100">severity +</text><text x="243" y="112">fraud score</text>
+                <rect x="298" y="70" width="82" height="56" rx="8" fill="#5BA63C"></rect><text x="339" y="88">Low complexity:</text><text x="339" y="100">instant</text><text x="339" y="112">auto-assign</text>
+                <rect x="394" y="70" width="82" height="56" rx="8" fill="#367895"></rect><text x="435" y="88">Med/High:</text><text x="435" y="100">senior adjuster</text><text x="435" y="112">queue</text>
+                <rect x="490" y="70" width="82" height="56" rx="8" fill="#367895"></rect><text x="531" y="88">Adjuster</text><text x="531" y="100">validates or</text><text x="531" y="112">overrides</text>
+                <rect x="586" y="70" width="82" height="56" rx="8" fill="#FB2832"></rect><text x="627" y="88">High-signal:</text><text x="627" y="100">auto-refer</text><text x="627" y="112">to SIU</text>
+                <rect x="682" y="70" width="70" height="56" rx="8" fill="#367895"></rect><text x="717" y="88">Settle +</text><text x="717" y="100">proactive</text><text x="717" y="112">SMS updates</text>
+              </g>
+              <g stroke="var(--muted)" stroke-width="1.5" marker-end="url(#arrowF)">
+                <line x1="92" y1="98" x2="104" y2="98"></line>
+                <line x1="188" y1="98" x2="200" y2="98"></line>
+                <line x1="284" y1="98" x2="296" y2="98"></line>
+                <line x1="380" y1="98" x2="392" y2="98"></line>
+                <line x1="476" y1="98" x2="488" y2="98"></line>
+                <line x1="572" y1="98" x2="584" y2="98"></line>
+                <line x1="668" y1="98" x2="680" y2="98"></line>
+              </g>
+              <text x="380" y="155" text-anchor="middle" font-size="11" fill="var(--leaf)" font-weight="700">Target elapsed time: 9.0 min intake + 4 hours to assignment (Low complexity)</text>
+              <defs><marker id="arrowF" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="var(--muted)"></path></marker></defs>
+            </svg>
+          </div>
+          <ol class="step-list">
+            <li>Policyholder engages the AI voice or chat intake agent, available 24/7.</li>
+            <li>AI auto-extracts structured loss data and verifies policy and coverage in real time.</li>
+            <li>AI classifies severity/complexity and generates a fraud-signal score.</li>
+            <li>Low-complexity claims are instantly auto-assigned via the load-balancing rules engine.</li>
+            <li>Medium/High-complexity claims route to a senior adjuster queue with an AI-prefilled worksheet.</li>
+            <li>Adjuster validates the AI classification &mdash; accepts or overrides with a reason code.</li>
+            <li>High fraud-signal claims are auto-referred to SIU with a full explainability report.</li>
+            <li>Adjuster settles the claim; policyholder receives proactive SMS milestone updates.</li>
+            <li>Compliance dashboard monitors AI decisions monthly for audit-readiness and fairness.</li>
+          </ol>
+
+          <div class="callout success">
+            <b>Net process impact</b>
+            Steps 4&ndash;6 of the current state (unassigned queue, manual review, document chasing) collapse into a single automated classification-and-assignment step for the 35% of claims classified Low complexity &mdash; the single largest driver of the 4.3-day-to-4-hour improvement in time-to-assignment.
+          </div>
+        </div>
+        <div class="doc-signoff">
+          <h4>Sign-Off</h4>
+          <div class="signoff-grid">
+            <div class="signoff-box"><label>Prepared By</label><div class="name">Angela Cho</div><div class="role">Senior Business Analyst Lead</div><div class="sig">A. Cho &mdash; 2026-07-11</div></div>
+            <div class="signoff-box"><label>Reviewed By</label><div class="name">Angela Cho (Manager)</div><div class="role">Regional Claims Center Manager</div><div class="sig">A. Cho (Mgr) &mdash; 2026-07-12</div></div>
+            <div class="signoff-box"><label>Approved By</label><div class="name">Marcus Webb</div><div class="role">VP, Claims Operations</div><div class="sig">M. Webb &mdash; 2026-07-12</div></div>
+          </div>
+        </div>
+        <div class="doc-footer">
+          <div><img src="" id="logo-proc-foot" alt="Colaberry">Meridian Mutual Insurance &middot; ClaimSwift AI Program</div>
+          <div>Page 1 of 1 &middot; Confidential &mdash; Internal Use Only</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="rtm">
+      <h2>Document 9 &middot; Requirements Traceability Matrix</h2>
+      <div class="doc-toolbar no-print">
+        <button class="btn btn-primary" onclick="downloadDoc('rtm-doc','Meridian-Mutual_ClaimSwiftAI_RTM')">Download standalone HTML</button>
+        <button class="btn btn-outline" onclick="printDoc('rtm')">Print / Save as PDF</button>
+        <button class="btn btn-ghost" onclick="downloadCSV('rtmTable','Meridian-Mutual_ClaimSwiftAI_RTM')">Download CSV</button>
+      </div>
+      <div class="doc-card" id="rtm-doc">
+        <div class="doc-cover">
+          <img class="doc-cover-logo" id="logo-rtm" src="" alt="Colaberry">
+          <div class="doc-kicker">Requirements Traceability Matrix</div>
+          <h2>ClaimSwift AI &mdash; BRD to Test Coverage</h2>
+          <div class="doc-sub">Every functional and non-functional requirement traced from business objective through user story, use case, and verification method. No orphan requirements.</div>
+        </div>
+        <div class="doc-control">
+          <div><label>Document Owner</label><span>Angela Cho, Sr. BA Lead</span></div>
+          <div><label>Version</label><span>1.3</span></div>
+          <div><label>Status</label><span class="badge badge-pass">Baseline for QA Sign-off</span></div>
+          <div><label>Date</label><span>2026-07-28</span></div>
+          <div><label>Classification</label><span>Internal</span></div>
+        </div>
+        <div class="doc-body">
+          <p>This matrix is the architect's proof that nothing in the backlog is an orphan: every requirement below traces to a business objective on one end and a verification method on the other. Use it to answer "why does this exist?" and "how do we know it's done?" for any line in the <a href="#brd">BRD</a>.</p>
+          <div class="table-wrap">
+            <table id="rtmTable">
+              <thead><tr><th>Req ID</th><th>Requirement Summary</th><th>Priority</th><th>Business Objective</th><th>User Story</th><th>Use Case</th><th>Verification Method</th><th>Status</th></tr></thead>
+              <tbody>
+                <tr><td>FR-01</td><td>AI captures loss details in one session</td><td>Must</td><td>Cut intake time 22.4&rarr;9 min</td><td>US-01</td><td>UC-1</td><td>UAT scripted call + transcript review</td><td><span class="badge badge-pass">Verified</span></td></tr>
+                <tr><td>FR-02</td><td>Plain-language coverage confirmation</td><td>Must</td><td>Raise first-contact NPS 21&rarr;45</td><td>US-02</td><td>UC-1</td><td>UAT scripted call</td><td><span class="badge badge-pass">Verified</span></td></tr>
+                <tr><td>FR-03</td><td>SMS evidence upload link</td><td>Should</td><td>Cut intake time; improve adjuster efficiency</td><td>US-03</td><td>UC-1</td><td>Integration test with Twilio sandbox</td><td><span class="badge badge-progress">In Progress</span></td></tr>
+                <tr><td>FR-04</td><td>Auto-classify complexity Low/Medium/High</td><td>Must</td><td>Raise STP rate 6%&rarr;35%</td><td>US-04</td><td>UC-2</td><td>Model validation on 500-claim sample</td><td><span class="badge badge-pass">Verified</span></td></tr>
+                <tr><td>FR-05</td><td>Auto-assign Low-complexity claims</td><td>Must</td><td>Cut time-to-assignment 4.3d&rarr;4h</td><td>US-05</td><td>UC-2</td><td>UAT: 50 simulated claims, assignment SLA timer</td><td><span class="badge badge-pass">Verified</span></td></tr>
+                <tr><td>FR-06</td><td>Display confidence score + top factors</td><td>Should</td><td>Adjuster trust &amp; adoption</td><td>US-06</td><td>UC-2, UC-4</td><td>UI review + adjuster usability session</td><td><span class="badge badge-progress">In Progress</span></td></tr>
+                <tr><td>FR-07</td><td>Adjuster override with reason code</td><td>Must</td><td>Human-in-the-loop guardrail (compliance)</td><td>US-07</td><td>UC-2, UC-4</td><td>UAT: override flow + audit log check</td><td><span class="badge badge-pass">Verified</span></td></tr>
+                <tr><td>FR-08</td><td>Fraud-signal score per claim</td><td>Must</td><td>Raise SIU referral precision 34%&rarr;55%</td><td>US-08</td><td>UC-3</td><td>Model validation on labeled fraud dataset</td><td><span class="badge badge-pass">Verified</span></td></tr>
+                <tr><td>FR-09</td><td>Plain-language fraud indicator explanations</td><td>Should</td><td>SIU analyst trust &amp; adoption</td><td>US-09</td><td>UC-3</td><td>SIU usability session</td><td><span class="badge badge-progress">In Progress</span></td></tr>
+                <tr><td>FR-10</td><td>SIU referral outcome feedback capture</td><td>Could</td><td>Continuous model improvement</td><td>US-10</td><td>UC-3</td><td>UAT: outcome logging flow</td><td><span class="badge badge-progress">Planned</span></td></tr>
+                <tr><td>FR-11</td><td>Full decision audit log, 7-yr retention</td><td>Must</td><td>DOI audit readiness (5-business-day SLA)</td><td>US-11</td><td>UC-1, UC-2, UC-3</td><td>Compliance audit simulation (mock DOI request)</td><td><span class="badge badge-pass">Verified</span></td></tr>
+                <tr><td>FR-12</td><td>Monthly disparate-impact report</td><td>Must</td><td>Fair-claims-handling compliance</td><td>US-12</td><td>UC-2</td><td>Statistical fairness test (four-fifths rule)</td><td><span class="badge badge-progress">In Progress</span></td></tr>
+                <tr><td>FR-13</td><td>Real-time manager dashboard</td><td>Should</td><td>Proactive workload balancing</td><td>US-13</td><td>&mdash;</td><td>UAT: dashboard refresh timing test</td><td><span class="badge badge-progress">Planned</span></td></tr>
+                <tr><td>FR-14</td><td>Proactive SMS milestone updates</td><td>Could</td><td>Raise first-contact NPS 21&rarr;45</td><td>US-14</td><td>&mdash;</td><td>Integration test with Twilio sandbox</td><td><span class="badge badge-progress">Planned</span></td></tr>
+                <tr><td>NFR-01</td><td>Intake latency &le;2s per turn (p95)</td><td>Must</td><td>Policyholder experience quality</td><td>&mdash;</td><td>UC-1</td><td>Load test, 95th-percentile latency report</td><td><span class="badge badge-progress">In Progress</span></td></tr>
+                <tr><td>NFR-02</td><td>99.9% intake channel availability</td><td>Must</td><td>Trust in 24/7 channel</td><td>&mdash;</td><td>UC-1</td><td>Uptime monitoring, 90-day rolling report</td><td><span class="badge badge-progress">Planned</span></td></tr>
+                <tr><td>NFR-03</td><td>3,500 concurrent sessions (CAT surge)</td><td>Must</td><td>Resilience during catastrophe events</td><td>&mdash;</td><td>UC-1</td><td>Load/stress test simulating CAT surge</td><td><span class="badge badge-progress">Planned</span></td></tr>
+                <tr><td>NFR-04</td><td>Encryption at rest &amp; in transit</td><td>Must</td><td>Data protection / security policy</td><td>&mdash;</td><td>All</td><td>Security penetration test</td><td><span class="badge badge-pass">Verified</span></td></tr>
+                <tr><td>NFR-05</td><td>Explainability record per auto-triage decision</td><td>Must</td><td>DOI audit readiness</td><td>US-11</td><td>UC-1, UC-2, UC-3</td><td>Compliance audit simulation</td><td><span class="badge badge-pass">Verified</span></td></tr>
+                <tr><td>NFR-06</td><td>&ge;90% intake completion w/o escalation</td><td>Should</td><td>Cut intake time; reduce agent load</td><td>US-01</td><td>UC-1</td><td>Production analytics, pilot region</td><td><span class="badge badge-progress">Planned</span></td></tr>
+                <tr><td>NFR-07</td><td>&ge;88% model agreement with adjusters</td><td>Must</td><td>Trustworthy triage; leakage reduction</td><td>US-04</td><td>UC-2</td><td>Quarterly 500-claim validation sample</td><td><span class="badge badge-progress">In Progress</span></td></tr>
+                <tr><td>NFR-08</td><td>Disparate-impact ratio 0.8&ndash;1.25</td><td>Must</td><td>Fair-claims-handling compliance</td><td>US-12</td><td>UC-2</td><td>Statistical fairness test, monthly</td><td><span class="badge badge-progress">In Progress</span></td></tr>
+                <tr><td>NFR-09</td><td>RPO 15 min / RTO 2 hours</td><td>Should</td><td>Business continuity</td><td>&mdash;</td><td>All</td><td>Disaster-recovery tabletop + failover test</td><td><span class="badge badge-progress">Planned</span></td></tr>
+                <tr><td>NFR-10</td><td>English &amp; Spanish intake at launch</td><td>Should</td><td>Serve 99% of policyholder base</td><td>US-01</td><td>UC-1</td><td>Certified translation review + UAT (bilingual)</td><td><span class="badge badge-progress">Planned</span></td></tr>
+              </tbody>
+            </table>
+          </div>
+          <div class="callout info">
+            <b>Reading this matrix as an architect</b>
+            Every row has a Business Objective and a Verification Method &mdash; that's what makes it a matrix and not just a list. If you ever see a requirement with a dash in either column, treat it as a blocked approval, not a rounding error: either the objective was never established, or nobody has defined what "done" looks like.
+          </div>
+        </div>
+        <div class="doc-signoff">
+          <h4>Sign-Off</h4>
+          <div class="signoff-grid">
+            <div class="signoff-box"><label>Prepared By</label><div class="name">Angela Cho</div><div class="role">Senior Business Analyst Lead</div><div class="sig">A. Cho &mdash; 2026-07-27</div></div>
+            <div class="signoff-box"><label>Reviewed By</label><div class="name">QA Lead &mdash; ClaimSwift AI</div><div class="role">Quality Assurance</div><div class="sig">QA Lead &mdash; 2026-07-28</div></div>
+            <div class="signoff-box"><label>Approved By</label><div class="name">Marcus Webb</div><div class="role">VP, Claims Operations</div><div class="sig">M. Webb &mdash; 2026-07-28</div></div>
+          </div>
+        </div>
+        <div class="doc-footer">
+          <div><img src="" id="logo-rtm-foot" alt="Colaberry">Meridian Mutual Insurance &middot; ClaimSwift AI Program</div>
+          <div>Page 1 of 1 &middot; Confidential &mdash; Internal Use Only</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="faq">
+      <h2>FAQ &amp; Glossary</h2>
+      <p>Quick answers to the questions learners ask most often. For a conversational version, use the <a href="#ask-section">Ask the Guide</a> widget above.</p>
+
+      <details class="faq-item">
+        <summary>What's the difference between a functional and a non-functional requirement?</summary>
+        <p>A functional requirement describes a behavior the system must perform (e.g., "auto-classify claim complexity"). A non-functional requirement describes the quality bar that behavior must meet (e.g., "classify within 60 seconds, with 88% accuracy, encrypted at rest"). See the <a href="#brd">BRD</a> for 14 functional and 10 non-functional examples side by side.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What does MoSCoW mean and how strict should it be?</summary>
+        <p>Must / Should / Could / Won't. Must means the release fails without it; Won't is explicitly excluded (with a reason) so it doesn't quietly resurface as scope creep later. In the <a href="#user-stories">User Stories</a> backlog, 7 of 15 stories are Must &mdash; if every story were Must, that would be a signal the prioritization conversation never happened.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Why do use cases need alternate and exception flows?</summary>
+        <p>The main flow is the happy path. Alternate flows are valid variations (e.g., escalating to a human mid-conversation). Exception flows cover failure (e.g., the policy isn't found, or the AI can't classify with confidence). AI-generated use cases most often skip exception flows entirely &mdash; see <a href="#use-cases">UC-1 through UC-4</a> for what "complete" looks like.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What makes a requirement traceable, and why does it matter?</summary>
+        <p>Traceable means it links backward to a business objective and forward to a verification method. The <a href="#rtm">Requirements Traceability Matrix</a> is the artifact that proves this for every requirement in the BRD &mdash; no row has a dash in both the objective and verification columns.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What is a persona, and how is it different from a user role?</summary>
+        <p>A user role is a job title. A persona is a specific person's goals and frustrations &mdash; it exists to keep requirements anchored to a real motivation instead of an abstract "the user." See the five <a href="#personas">Personas</a> built for ClaimSwift AI, none of which lead with demographic details.</p>
+      </details>
+      <details class="faq-item">
+        <summary>As an AI Solution Architect, what should I actually be checking before I approve an AI-generated requirement?</summary>
+        <p>Run the eight-point <a href="#primer">Architect's Review Lens</a>: traceable, testable, singular, honestly prioritized, complete on NFRs, covers the unhappy path, bounded in scope, and owned by a named business stakeholder.</p>
+      </details>
+      <details class="faq-item">
+        <summary>What is straight-through processing (STP) and why does ClaimSwift AI care about it?</summary>
+        <p>STP is the percentage of claims that move from intake to adjuster assignment with zero manual triage. Meridian Mutual's baseline is 6%; ClaimSwift AI targets 35% for low-complexity Auto and Homeowners claims. See the <a href="#vision">Vision &amp; Business Case</a> for the full current-state / future-state comparison.</p>
+      </details>
+      <details class="faq-item">
+        <summary>Why does the AI never make a final settlement decision on its own?</summary>
+        <p>State adjuster-licensing statute requires a licensed human to own final coverage and settlement decisions. This is why US-15 (AI auto-negotiating settlements under $2,500) is explicitly marked Won't for this release &mdash; it's deferred pending legal review, not silently dropped.</p>
+      </details>
+
+      <h3>Glossary</h3>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th style="width:18%">Term</th><th>Definition</th></tr></thead>
+          <tbody>
+            <tr><td class="mono">BRD</td><td>Business Requirements Document &mdash; the baseline set of functional and non-functional requirements for an initiative.</td></tr>
+            <tr><td class="mono">MoSCoW</td><td>A prioritization technique: Must, Should, Could, Won't (this time).</td></tr>
+            <tr><td class="mono">Given/When/Then</td><td>A structured format for acceptance criteria: precondition, trigger, observable outcome.</td></tr>
+            <tr><td class="mono">RTM</td><td>Requirements Traceability Matrix &mdash; links each requirement to its business objective and verification method.</td></tr>
+            <tr><td class="mono">NFR</td><td>Non-Functional Requirement &mdash; a measurable quality attribute (performance, security, availability, etc.).</td></tr>
+            <tr><td class="mono">KPI</td><td>Key Performance Indicator &mdash; a specific, measurable metric with a baseline, target, and cadence.</td></tr>
+            <tr><td class="mono">FNOL</td><td>First Notice of Loss &mdash; the initial report a policyholder makes to start an insurance claim.</td></tr>
+            <tr><td class="mono">STP</td><td>Straight-Through Processing &mdash; a claim requiring no manual triage step.</td></tr>
+            <tr><td class="mono">SIU</td><td>Special Investigations Unit &mdash; investigates suspected insurance fraud.</td></tr>
+            <tr><td class="mono">Persona</td><td>A composite profile built from a real user's goals and frustrations, not demographics.</td></tr>
+            <tr><td class="mono">Use Case</td><td>A description of how an actor interacts with a system, including main, alternate, and exception flows.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<footer class="site-footer">
+  <img id="logo-footer" src="" alt="Colaberry logo">
+  Colaberry Enterprise AI Leadership Accelerator &middot; Business Analyst Field Guide &middot; Generated 2026-08-01 &middot; For internal learner use
+</footer>
+
+<script id="deepdive-metadata" type="application/json">
+{
+  "guide_type": "Business Analyst Field Guide",
+  "curriculum_type": "deep_dive",
+  "week": 1,
+  "discipline": "Business Analyst",
+  "student_id": "colaberry-learner-001",
+  "project_id": "claimswift-ai-meridian-mutual",
+  "repository": "AI-Project",
+  "generated_by": "Claude Code",
+  "generated_date": "2026-08-01",
+  "version": "1.0.0",
+  "build_number": "1"
+}
+</script>
+
+<script>
+/* ============ LOGO INJECTION ============ */
+const LOGO_URL = "https://enterprise.colaberry.ai/colaberry-logo-transparent.png";
+document.addEventListener('DOMContentLoaded', function(){
+  document.querySelectorAll('img[id^="logo-"]').forEach(function(img){ img.src = LOGO_URL; });
+});
+</script>
+
+<script>
+/* ============ THEME TOGGLE ============ */
+(function(){
+  var saved = null;
+  try { saved = localStorage.getItem('cbg-fieldguide-theme'); } catch(e){}
+  if(saved){ document.documentElement.setAttribute('data-theme', saved); }
+  document.getElementById('themeToggle').addEventListener('click', function(){
+    var root = document.documentElement;
+    var current = root.getAttribute('data-theme');
+    if(!current){
+      current = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    var next = current === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('cbg-fieldguide-theme', next); } catch(e){}
+  });
+})();
+
+/* ============ SIDEBAR ACTIVE STATE ============ */
+(function(){
+  var navLinks = Array.prototype.slice.call(document.querySelectorAll('.sidebar a.nav-link'));
+  var sectionMap = {};
+  navLinks.forEach(function(link){
+    var id = link.getAttribute('href').slice(1);
+    sectionMap[id] = link;
+  });
+  if('IntersectionObserver' in window){
+    var observer = new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var link = sectionMap[entry.target.id];
+        if(!link) return;
+        if(entry.isIntersecting){
+          navLinks.forEach(function(l){ l.classList.remove('active'); });
+          link.classList.add('active');
+        }
+      });
+    }, {rootMargin: '-90px 0px -65% 0px', threshold: 0});
+    Object.keys(sectionMap).forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) observer.observe(el);
+    });
+  }
+})();
+
+/* ============ UTIL ============ */
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, function(m){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];
+  });
+}
+
+/* ============ SEARCH ============ */
+(function(){
+  var searchIndex = [];
+  document.querySelectorAll('main > section[id], main > .hero[id]').forEach(function(sec){
+    var titleEl = sec.querySelector('h1, h2');
+    var title = titleEl ? titleEl.textContent.trim() : sec.id;
+    var text = (sec.textContent || '').replace(/\s+/g,' ').trim();
+    searchIndex.push({ id: sec.id, title: title, text: text });
+  });
+
+  var searchInput = document.getElementById('searchInput');
+  var searchResults = document.getElementById('searchResults');
+
+  function renderResults(query){
+    var q = query.trim().toLowerCase();
+    if(q.length < 2){ searchResults.classList.remove('show'); searchResults.innerHTML = ''; return; }
+    var matches = searchIndex.filter(function(item){
+      return item.text.toLowerCase().indexOf(q) !== -1 || item.title.toLowerCase().indexOf(q) !== -1;
+    }).slice(0, 8);
+    if(matches.length === 0){
+      searchResults.innerHTML = '<div class="sr-empty">No matches for &ldquo;' + escapeHtml(query) + '&rdquo;. Try the Ask widget instead.</div>';
+    } else {
+      searchResults.innerHTML = matches.map(function(item){
+        var lowerText = item.text.toLowerCase();
+        var idx = lowerText.indexOf(q);
+        var snippet = '';
+        if(idx >= 0){
+          var start = Math.max(0, idx - 40);
+          var end = Math.min(item.text.length, idx + q.length + 60);
+          snippet = (start > 0 ? '&hellip;' : '') + escapeHtml(item.text.substring(start, end)) + (end < item.text.length ? '&hellip;' : '');
+        }
+        return '<div class="sr-item" data-id="' + item.id + '"><b>' + escapeHtml(item.title) + '</b><span>' + snippet + '</span></div>';
+      }).join('');
+    }
+    searchResults.classList.add('show');
+  }
+
+  searchInput.addEventListener('input', function(){ renderResults(searchInput.value); });
+  searchInput.addEventListener('focus', function(){ if(searchInput.value.trim().length >= 2) renderResults(searchInput.value); });
+  searchResults.addEventListener('click', function(e){
+    var item = e.target.closest('.sr-item');
+    if(!item) return;
+    var id = item.getAttribute('data-id');
+    window.location.hash = id;
+    searchResults.classList.remove('show');
+    searchInput.value = '';
+  });
+  document.addEventListener('click', function(e){
+    if(!e.target.closest('.header-search')){ searchResults.classList.remove('show'); }
+  });
+  searchInput.addEventListener('keydown', function(e){
+    if(e.key === 'Escape'){ searchResults.classList.remove('show'); searchInput.blur(); }
+  });
+})();
+
+/* ============ ASK THE GUIDE (offline Q&A) ============ */
+var QA_DATA = [
+  { keywords:['moscow','must have','should have','could have',"won't have",'prioriti'], answer:"MoSCoW is a prioritization technique: Must have (the release fails without it), Should have (important but not fatal to cut), Could have (desirable if time allows), and Won't have this time (explicitly out of scope, with a reason so it doesn't quietly resurface). The ClaimSwift AI backlog has 7 Must, 4 Should, 3 Could, and 1 Won't story.", section:'primer' },
+  { keywords:['functional requirement','non-functional','nfr','fr-0','functional vs'], answer:"Functional requirements describe what the system does (a behavior or rule). Non-functional requirements describe how well it does it — performance, security, availability, compliance. The BRD documents 14 functional requirements (FR-01 to FR-14) and 10 non-functional requirements (NFR-01 to NFR-10).", section:'brd' },
+  { keywords:['given','when','then','acceptance criteria','gwt'], answer:"Acceptance criteria are written as Given/When/Then: a precondition (Given), a trigger (When), and an observable, testable outcome (Then). Every one of the 15 ClaimSwift AI user stories carries at least one Given/When/Then test.", section:'user-stories' },
+  { keywords:['roi','return on investment','payback','business case','benefit','cost','budget','funding'], answer:"ClaimSwift AI requires $2.4M in Year-0 investment and $480K/year run cost, against a projected $6.1M Year-1 benefit — a payback period of roughly 5 months post go-live and a 3-year ROI near 340%.", section:'vision' },
+  { keywords:['sponsor','executive sponsor','who approved','decision maker','cco'], answer:"The executive sponsor is Denise Okafor, Chief Claims Officer. The Executive Summary documents the funding ask: $2.4M Year-0 capital plus $480K/year run-rate.", section:'exec-summary' },
+  { keywords:['stp','straight-through','straight through processing'], answer:"Straight-Through Processing (STP) is the percentage of claims that move from intake to adjuster assignment with zero manual triage. Meridian Mutual's baseline is 6%; ClaimSwift AI targets 35% for low-complexity claims.", section:'vision' },
+  { keywords:['fraud','siu','referral','precision','special investigations'], answer:"ClaimSwift AI generates a fraud-signal score (0-100) with explainable contributing indicators for every new claim, auto-referring high-score claims to the Special Investigations Unit (SIU). Target: raise referral precision from 34% to 55%. See Use Case UC-3.", section:'use-cases' },
+  { keywords:['persona','goals and frustrations','who are the personas'], answer:"Personas capture goals and frustrations, not demographics. ClaimSwift AI has five: Priya Natarajan (Senior Adjuster), Tom Reeves (Policyholder), Angela Cho (Claims Manager), David Okonkwo (SIU Lead), and Linda Foster (Compliance Officer).", section:'personas' },
+  { keywords:['stakeholder','power and interest','power/interest','manage closely'], answer:"The Stakeholder Matrix maps twelve stakeholder groups on power vs. interest, from 'Manage Closely' (the CCO and VP Claims Ops) to 'Monitor' (the implementation vendor).", section:'stakeholders' },
+  { keywords:['traceability','rtm','orphan requirement','trace'], answer:"The Requirements Traceability Matrix (RTM) links every requirement to a business objective and a verification method, so nothing in the backlog is an 'orphan' requirement with no reason to exist and no way to prove it's done.", section:'rtm' },
+  { keywords:['use case','alternate flow','exception flow','unhappy path'], answer:"ClaimSwift AI documents four use cases (UC-1 through UC-4), each with a main flow plus alternate (valid variation) and exception (unhappy path) flows — for example, UC-1 covers what happens when a policy can't be found.", section:'use-cases' },
+  { keywords:['kpi','key performance indicator','metric','measure success'], answer:"Key KPIs for ClaimSwift AI: FNOL intake time (22.4 to 9.0 minutes), time-to-assignment (4.3 days to 4 hours), STP rate (6% to 35%), first-contact NPS (21 to 45), and SIU referral precision (34% to 55%).", section:'exec-summary' },
+  { keywords:['scope','out of scope','in scope','what is excluded'], answer:"Phase 1 scope covers Auto and Homeowners FNOL intake, triage, assignment, and fraud-signal referral. Out of scope: Commercial Lines, Umbrella, and Specialty policies, plus any automated settlement authority.", section:'brd' },
+  { keywords:['current state','future state','process map','swimlane','as-is','to-be'], answer:"The current-state process is manual: phone intake, hand-keyed data, a 4.3-day unassigned queue, and manual fraud screening. The future state uses AI intake, auto-classification, and auto-assignment for low-complexity claims within 4 hours.", section:'process' },
+  { keywords:['architect','review lens','checklist','approve requirement','evaluate requirement'], answer:"The Architect's Review Lens is an eight-point checklist for evaluating any AI-generated requirement: traceable, testable, singular, honestly prioritized, complete on NFRs, covers the unhappy path, bounded in scope, and owned by a named stakeholder.", section:'primer' },
+  { keywords:['why business analysis','why ba','business analyst exist','purpose of ba'], answer:"Business analysis exists to close the gap between what the business needs and what gets built — most failed projects trace back to requirements that were wrong, ambiguous, or never validated with real stakeholders.", section:'primer' },
+  { keywords:['company','insurer','meridian mutual','which industry','example industry'], answer:"The example industry is Insurance (Property & Casualty). Meridian Mutual Insurance is a fictional regional carrier in Ohio with 460,000 policies, and ClaimSwift AI is its AI-powered FNOL intake and triage initiative.", section:'overview' },
+  { keywords:['compliance','audit','doi','regulator','fair claims','disparate impact'], answer:"Every AI-driven claim decision is logged with inputs, model version, and rationale, retained for 7 years, and retrievable within 5 business days for a Department of Insurance audit. Model outcomes are monitored monthly for disparate impact (NFR-08).", section:'brd' },
+  { keywords:['override','adjuster override','reason code'], answer:"A licensed adjuster can override any AI severity or complexity classification, but must select a documented reason code before the override is saved — human judgment remains the final authority (FR-07 / US-07).", section:'user-stories' },
+  { keywords:['settlement','deferred','us-15','won’t','wont this release'], answer:"Automated settlement negotiation under $2,500 (US-15) is explicitly marked Won't for this release — deferred pending legal review of delegated settlement authority under state adjuster-licensing statute, not silently dropped.", section:'user-stories' },
+  { keywords:['fnol','first notice of loss'], answer:"FNOL, First Notice of Loss, is the initial report a policyholder makes to start a claim. ClaimSwift AI replaces the manual, phone-first FNOL process with a 24/7 AI conversational intake channel. See Use Case UC-1.", section:'use-cases' },
+  { keywords:['documents','deliverables','what documents','nine documents'], answer:"This guide includes nine downloadable deliverables: Executive Summary, Vision & Business Case, BRD, User Stories, Use Cases, Personas, Stakeholder Matrix, Process Maps, and the Requirements Traceability Matrix — each in its own section with download and print options.", section:'overview' }
+];
+
+function answerQuestion(q){
+  var ql = q.toLowerCase();
+  var best = null, bestScore = 0;
+  QA_DATA.forEach(function(item){
+    var score = 0;
+    item.keywords.forEach(function(k){ if(ql.indexOf(k) !== -1) score += k.length; });
+    if(score > bestScore){ bestScore = score; best = item; }
+  });
+  return best;
+}
+
+(function(){
+  var askAnswerBox = document.getElementById('askAnswer');
+  var askAnswerQ = document.getElementById('askAnswerQ');
+  var askAnswerA = document.getElementById('askAnswerA');
+  var askAnswerJump = document.getElementById('askAnswerJump');
+  var askInput = document.getElementById('askInput');
+
+  function doAsk(){
+    var q = askInput.value.trim();
+    if(!q) return;
+    var result = answerQuestion(q);
+    askAnswerQ.textContent = 'Q: ' + q;
+    if(result){
+      askAnswerA.textContent = result.answer;
+      askAnswerJump.style.display = 'inline-block';
+      askAnswerJump.setAttribute('href', '#' + result.section);
+    } else {
+      askAnswerA.textContent = "I couldn't find a specific answer to that in the guide. Try asking about MoSCoW, acceptance criteria, ROI, personas, use cases, the RTM, or the stakeholder matrix.";
+      askAnswerJump.style.display = 'none';
+    }
+    askAnswerBox.classList.add('show');
+  }
+
+  document.getElementById('askBtn').addEventListener('click', doAsk);
+  askInput.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ doAsk(); } });
+  document.getElementById('askJump').addEventListener('click', function(){
+    window.location.hash = 'ask-section';
+    askInput.focus();
+  });
+
+  var suggestions = ["What does MoSCoW mean?", "What is the ROI of ClaimSwift AI?", "Who is the executive sponsor?", "What is a Given/When/Then?", "What's out of scope?", "How does fraud referral work?"];
+  var suggEl = document.getElementById('askSuggestions');
+  suggEl.innerHTML = suggestions.map(function(s){ return '<span class="ask-chip">' + escapeHtml(s) + '</span>'; }).join('');
+  suggEl.addEventListener('click', function(e){
+    var chip = e.target.closest('.ask-chip');
+    if(!chip) return;
+    askInput.value = chip.textContent;
+    doAsk();
+  });
+})();
+
+/* ============ PER-DOCUMENT DOWNLOAD (standalone styled HTML) ============ */
+function downloadDoc(cardId, filename){
+  var card = document.getElementById(cardId);
+  if(!card) return;
+  var styleTag = document.querySelector('style').outerHTML;
+  var html = '<!doctype html><html lang="en"><head><meta charset="UTF-8">' +
+    '<meta name="viewport" content="width=device-width, initial-scale=1.0">' +
+    '<title>' + escapeHtml(filename) + '</title>' +
+    styleTag +
+    '<style>body{background:var(--surface-alt);padding:40px 16px;} .dl-wrap{max-width:960px;margin:0 auto;}</style>' +
+    '</head><body><div class="dl-wrap">' + card.outerHTML + '</div></body></html>';
+  var blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename + '.html';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+/* ============ CSV EXPORT ============ */
+function downloadCSV(tableId, filename){
+  var table = document.getElementById(tableId);
+  if(!table) return;
+  var rows = table.querySelectorAll('tr');
+  var lines = [];
+  rows.forEach(function(row){
+    var cells = row.querySelectorAll('th, td');
+    var line = [];
+    cells.forEach(function(cell){
+      var text = (cell.innerText || cell.textContent || '').replace(/\s+/g, ' ').trim();
+      text = text.replace(/"/g, '""');
+      line.push('"' + text + '"');
+    });
+    lines.push(line.join(','));
+  });
+  var csvContent = '﻿' + lines.join('\r\n');
+  var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url; a.download = filename + '.csv';
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); }, 1000);
+}
+
+/* ============ PRINT / SAVE AS PDF (single document) ============ */
+function printDoc(sectionId){
+  document.body.classList.add('printing');
+  document.querySelectorAll('main > section').forEach(function(s){
+    s.classList.toggle('print-target', s.id === sectionId);
+  });
+  window.print();
+}
+window.addEventListener('afterprint', function(){
+  document.body.classList.remove('printing');
+  document.querySelectorAll('.print-target').forEach(function(s){ s.classList.remove('print-target'); });
+});
+</script>
+
+</body>
+</html>

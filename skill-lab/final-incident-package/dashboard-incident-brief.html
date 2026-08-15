@@ -1,0 +1,348 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Orders Dashboard — Publish Incident Brief</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  .viz-root {
+    color-scheme: light;
+    --surface-1:      #fcfcfb;
+    --page-plane:     #f9f9f7;
+    --text-primary:   #0b0b0b;
+    --text-secondary: #52514e;
+    --text-muted:     #898781;
+    --gridline:       #e1e0d9;
+    --baseline:       #c3c2b7;
+    --border:         rgba(11,11,11,0.10);
+    --status-good:      #0ca30c;
+    --status-warning:   #fab219;
+    --status-serious:   #ec835a;
+    --status-critical:  #d03b3b;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:where(:not([data-theme="light"])) .viz-root {
+      color-scheme: dark;
+      --surface-1:      #1a1a19;
+      --page-plane:     #0d0d0d;
+      --text-primary:   #ffffff;
+      --text-secondary: #c3c2b7;
+      --text-muted:     #898781;
+      --gridline:       #2c2c2a;
+      --baseline:       #383835;
+      --border: rgba(255,255,255,0.10);
+      --status-good:      #0ca30c;
+      --status-warning:   #fab219;
+      --status-serious:   #ec835a;
+      --status-critical:  #d03b3b;
+    }
+  }
+  :root[data-theme="dark"] .viz-root {
+    color-scheme: dark;
+    --surface-1:      #1a1a19;
+    --page-plane:     #0d0d0d;
+    --text-primary:   #ffffff;
+    --text-secondary: #c3c2b7;
+    --text-muted:     #898781;
+    --gridline:       #2c2c2a;
+    --baseline:       #383835;
+    --border: rgba(255,255,255,0.10);
+    --status-good:      #0ca30c;
+    --status-warning:   #fab219;
+    --status-serious:   #ec835a;
+    --status-critical:  #d03b3b;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background: var(--page-plane);
+    color: var(--text-primary);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 32px 20px 64px;
+  }
+  header.page-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 24px;
+  }
+  header.page-head h1 {
+    font-size: 22px;
+    font-weight: 700;
+    margin: 0 0 4px;
+  }
+  header.page-head .sub {
+    color: var(--text-secondary);
+    font-size: 14px;
+  }
+  .card {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 20px;
+  }
+  .decision-card {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .decision-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: color-mix(in srgb, var(--status-critical) 14%, transparent);
+    color: var(--status-critical);
+    border: 1px solid color-mix(in srgb, var(--status-critical) 45%, transparent);
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: 0.02em;
+    padding: 10px 20px;
+    border-radius: 8px;
+    white-space: nowrap;
+  }
+  .decision-badge svg { flex: none; }
+  .decision-text { font-size: 14px; color: var(--text-secondary); max-width: 560px; }
+  .decision-text strong { color: var(--text-primary); }
+
+  .stat-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  @media (max-width: 720px) { .stat-row { grid-template-columns: repeat(2, 1fr); } }
+  .stat-tile {
+    background: var(--surface-1);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 18px;
+  }
+  .stat-tile .label {
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted);
+    margin-bottom: 6px;
+  }
+  .stat-tile .value {
+    font-size: 28px;
+    font-weight: 700;
+    font-variant-numeric: proportional-nums;
+  }
+  .stat-tile .value.crit { color: var(--status-critical); }
+  .stat-tile .foot { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+
+  h2.section-title {
+    font-size: 15px;
+    font-weight: 700;
+    margin: 0 0 12px;
+  }
+
+  table.checks {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  table.checks th {
+    text-align: left;
+    color: var(--text-muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    padding: 0 10px 8px;
+    border-bottom: 1px solid var(--gridline);
+  }
+  table.checks td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--gridline);
+    vertical-align: top;
+    color: var(--text-primary);
+  }
+  table.checks tr:last-child td { border-bottom: none; }
+  table.checks td.evidence { color: var(--text-secondary); }
+
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-weight: 700;
+    font-size: 12px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .status-pill.pass { color: var(--status-good); background: color-mix(in srgb, var(--status-good) 14%, transparent); }
+  .status-pill.warn { color: color-mix(in srgb, var(--status-warning) 55%, black 30%); background: color-mix(in srgb, var(--status-warning) 22%, transparent); }
+  @media (prefers-color-scheme: dark) { .status-pill.warn { color: var(--status-warning); } }
+  :root[data-theme="dark"] .status-pill.warn { color: var(--status-warning); }
+  .status-pill.fail { color: var(--status-critical); background: color-mix(in srgb, var(--status-critical) 14%, transparent); }
+  .status-pill svg { flex: none; }
+
+  ol.root-causes {
+    margin: 0;
+    padding-left: 20px;
+    font-size: 13px;
+    color: var(--text-primary);
+    line-height: 1.6;
+  }
+  ol.root-causes li strong { color: var(--text-primary); }
+  ol.root-causes li span.finding { color: var(--text-secondary); }
+
+  .next-action {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--text-primary);
+  }
+  .not-established {
+    margin-top: 10px;
+    font-size: 12px;
+    color: var(--text-muted);
+    border-top: 1px dashed var(--gridline);
+    padding-top: 10px;
+  }
+
+  footer.src {
+    font-size: 11px;
+    color: var(--text-muted);
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="viz-root">
+  <div class="wrap">
+
+    <header class="page-head">
+      <div>
+        <h1>Orders Dashboard — Publish Incident Brief</h1>
+        <div class="sub">Run: orun-20260803-0812 &nbsp;·&nbsp; Pipeline: orders_ingest_daily &nbsp;·&nbsp; 2026-08-03</div>
+      </div>
+    </header>
+
+    <div class="card decision-card">
+      <span class="decision-badge">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <circle cx="10" cy="10" r="9" stroke="currentColor" stroke-width="2"/>
+          <path d="M4.5 4.5L15.5 15.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+        BLOCK
+      </span>
+      <div class="decision-text">
+        <strong>Do not publish.</strong> The data quality gate returned FAIL on 4 of 8 checks against the published contract
+        for <code>orders.csv</code>. Every failure traces to a specific, already-logged event in today's pipeline run.
+      </div>
+    </div>
+
+    <div class="stat-row">
+      <div class="stat-tile">
+        <div class="label">Checks failed</div>
+        <div class="value crit">4 / 8</div>
+        <div class="foot">Hard-rule violations</div>
+      </div>
+      <div class="stat-tile">
+        <div class="label">Rows in dataset</div>
+        <div class="value">12</div>
+        <div class="foot">Contract minimum: 10</div>
+      </div>
+      <div class="stat-tile">
+        <div class="label">Duplicate orders</div>
+        <div class="value crit">1</div>
+        <div class="foot">order_id ORD-1004, ×2</div>
+      </div>
+      <div class="stat-tile">
+        <div class="label">Stale record age</div>
+        <div class="value crit">~83h</div>
+        <div class="foot">vs. 24h freshness threshold</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Data quality check results</h2>
+      <table class="checks">
+        <thead>
+          <tr><th>Check</th><th>Evidence</th><th>Status</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Schema</td>
+            <td class="evidence">All contract columns present; one extra informational column</td>
+            <td><span class="status-pill warn"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M10 3L18 17H2L10 3Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M10 8v4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="10" cy="14.5" r="1" fill="currentColor"/></svg>WARN</span></td>
+          </tr>
+          <tr>
+            <td>Freshness</td>
+            <td class="evidence">ORD-1010 load_timestamp is ~83h old (threshold: 24h)</td>
+            <td><span class="status-pill fail"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>FAIL</span></td>
+          </tr>
+          <tr>
+            <td>Expected volume</td>
+            <td class="evidence">12 rows vs. minimum 10</td>
+            <td><span class="status-pill pass"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M3 10.5l4.5 4.5L17 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>PASS</span></td>
+          </tr>
+          <tr>
+            <td>Key uniqueness</td>
+            <td class="evidence">order_id ORD-1004 appears twice (rows 5, 11)</td>
+            <td><span class="status-pill fail"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>FAIL</span></td>
+          </tr>
+          <tr>
+            <td>Full-row duplicates</td>
+            <td class="evidence">No two rows identical across all columns</td>
+            <td><span class="status-pill pass"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M3 10.5l4.5 4.5L17 5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>PASS</span></td>
+          </tr>
+          <tr>
+            <td>Required fields</td>
+            <td class="evidence">region blank on ORD-1006 (row 7)</td>
+            <td><span class="status-pill fail"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>FAIL</span></td>
+          </tr>
+          <tr>
+            <td>Nulls</td>
+            <td class="evidence">region null rate 8.3% (1/12), required field</td>
+            <td><span class="status-pill fail"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>FAIL</span></td>
+          </tr>
+          <tr>
+            <td>Numeric rules</td>
+            <td class="evidence">revenue = -55.00 on ORD-1007 (row 8)</td>
+            <td><span class="status-pill fail"><svg width="12" height="12" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="8" stroke="currentColor" stroke-width="2"/><path d="M7 7l6 6M13 7l-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>FAIL</span></td>
+          </tr>
+        </tbody>
+      </table>
+      <footer class="src">Source: data-quality-report.md (skill: data-quality-gate)</footer>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Root cause summary</h2>
+      <ol class="root-causes">
+        <li><strong>Duplicate order:</strong> <span class="finding">upstream timeout on ORD-1004 triggered a retry with no idempotency-key check, so both the original and retried write landed.</span></li>
+        <li><strong>Missing region:</strong> <span class="finding">a mobile-quickadd upstream record omitted region; the validation warning fired but did not quarantine the row.</span></li>
+        <li><strong>Negative revenue:</strong> <span class="finding">the revenue_positive_filter validator was disabled by a config deploy the day before this run, so the -$55.00 value was never caught.</span></li>
+        <li><strong>Stale record:</strong> <span class="finding">a backfill merge from a previously failed run carried an old record's load_timestamp forward instead of refreshing it.</span></li>
+      </ol>
+      <footer class="src">Source: etl-triage-report.md (investigated: orders-pipeline-failure.log, pipeline-run-metadata.md)</footer>
+    </div>
+
+    <div class="card">
+      <h2 class="section-title">Recommended next business action</h2>
+      <div class="next-action">
+        Route to the data engineering team owning <code>orders_ingest_daily</code> for triage assignment and a fix
+        (idempotent retries, required-field quarantine, alerting on validator config changes, timestamp refresh on
+        backfill merges, and blocking the run on warning thresholds). Re-run the data quality gate on the corrected
+        dataset before attempting to publish again.
+      </div>
+      <div class="not-established">
+        Not established by the evidence reviewed: financial impact, incident owner, resolution time. None are asserted in this brief.
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

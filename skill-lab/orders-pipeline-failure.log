@@ -1,0 +1,11 @@
+2026-08-03 08:10:02 INFO  orders_ingest_daily run_id=orun-20260803-0812 start upstream=orders_api_v2 target=orders.csv
+2026-08-03 08:10:03 INFO  orders_ingest_daily fetched batch window=[2026-08-01,2026-08-02] rows_fetched=10
+2026-08-03 08:18:41 WARN  orders_ingest_daily upstream timeout on order_id=ORD-1004 after 8000ms, retrying (attempt 1/3)
+2026-08-03 08:18:52 INFO  orders_ingest_daily retry succeeded order_id=ORD-1004, response received and appended (no idempotency key check performed on retry path)
+2026-08-03 08:19:10 WARN  orders_ingest_daily schema validation: field 'region' missing/null on order_id=ORD-1006, upstream CRM export omitted region for records created via mobile-quickadd flow; row passed through, not quarantined
+2026-08-03 08:19:40 WARN  orders_ingest_daily numeric validator 'revenue_positive_filter' returned disabled=true for this run (config flag reverted by deploy at 2026-08-02 22:40 UTC); negative value on order_id=ORD-1007 (revenue=-55.00, refund adjustment) not filtered
+2026-08-03 08:20:15 INFO  orders_ingest_daily merging backfill segment run_id=orun-20260731-old status=incomplete, source=failed_run_recovery
+2026-08-03 08:20:16 WARN  orders_ingest_daily backfill row order_id=ORD-1010 carried forward original load_timestamp=2026-07-31T09:00:00 from failed run instead of being re-stamped on merge
+2026-08-03 08:24:03 INFO  orders_ingest_daily append order_id=ORD-1004 (second write, see 08:18:52 retry note) rows_written=1
+2026-08-03 08:26:40 INFO  orders_ingest_daily run complete rows_written=12 errors=0 warnings=4 exit_code=0
+2026-08-03 08:26:41 WARN  orders_ingest_daily run reported exit_code=0 despite 4 data-integrity warnings; no downstream quality gate was configured to block on warnings prior to this incident
