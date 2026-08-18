@@ -7,7 +7,35 @@
       "completedAt": "2026-08-17",
       "location": "docs/Assignment_1/command-center/",
       "summary": "Nine-tab Command Center: Overview, Outcomes, Users & Use Case, Guardrails, Systems, Project Management, AI Agents, Knowledge Base, Data Model. Single data source (assets/data.js), global sample/real toggle, honest grey live-status indicators, one-level drilldown modals on every card.",
-      "verification": "Opened in browser and manually traced assets/site.js; automated JS syntax check (node) was unavailable in this environment."
+      "acceptanceCriteria": [
+        {
+          "criterion": "Every tab exists and is reachable from the Command Center.",
+          "met": true,
+          "evidence": "9 pages built (index.html plus 02-outcomes.html through 09-datamodel.html), all linked from the shared topbar nav on every page."
+        },
+        {
+          "criterion": "Every card drills down one level, including cards with no data behind them yet.",
+          "met": true,
+          "evidence": "Release rows, system rows, guardrail rows, role cards, PM task rows and gantt bars, data-model entity cards, and Knowledge Base requirement/story rows all open a detail modal via a shared data-drill handler in assets/site.js."
+        },
+        {
+          "criterion": "The sample/real switch works on every tab, and sample data is labelled as sample everywhere it shows.",
+          "met": true,
+          "evidence": "Toggle state is persisted in localStorage and rendered in the shared topbar on all 9 pages; an amber SAMPLE DATA banner plus per-card tags appear wherever sample values differ from real ones."
+        },
+        {
+          "criterion": "The project management tab shows real releases and real due dates, not placeholders.",
+          "met": true,
+          "evidence": "06-pm.html renders the 5 actual releases (r0-r4, 2026-08-13 through 2026-10-01) and all 10 real story due dates from assets/data.js."
+        },
+        {
+          "criterion": "Nothing on the page claims a number, a connection, or a result the project has not actually produced.",
+          "met": true,
+          "evidence": "Real mode shows 0 of 10 stories done, all 4 systems as grey/never checked, and both guardrails explicitly labelled 'Not enforced yet'."
+        }
+      ],
+      "verification": "Opened in browser and manually traced assets/site.js; automated JS syntax check (node) was unavailable in this environment.",
+      "schemaSource": "No .colaberry/plan.json or repo-defined progress schema exists in this repository. These acceptanceCriteria are taken verbatim from the 'Acceptance - your stop condition' section of the Command Center brief, not from an externally specified schema."
     }
   }
 }

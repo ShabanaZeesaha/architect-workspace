@@ -310,10 +310,10 @@
 
     kb(data) {
       const notes = JSON.parse(localStorage.getItem(NOTES_KEY) || "[]");
-      const reqRows = data.requirements.map(r => `<div class="reqrow" data-kb-item data-kb-text="${escapeHtml((r.id + " " + r.text).toLowerCase())}">
+      const reqRows = data.requirements.map(r => `<div class="reqrow clickcard" data-drill="req::${r.id}" data-kb-item data-kb-text="${escapeHtml((r.id + " " + r.text).toLowerCase())}">
         <span class="reqid">${r.id}</span><span class="reqtag ${r.type}">${r.type}</span><span>${escapeHtml(r.text)}</span>
       </div>`).join("");
-      const storyRows = data.stories.map(s => `<div class="reqrow" data-kb-item data-kb-text="${escapeHtml((s.id + " " + s.title + " " + s.owner).toLowerCase())}">
+      const storyRows = data.stories.map(s => `<div class="reqrow clickcard" data-drill="story::${s.id}" data-kb-item data-kb-text="${escapeHtml((s.id + " " + s.title + " " + s.owner).toLowerCase())}">
         <span class="reqid">${s.id}</span><span>${escapeHtml(s.title)} — owned by ${escapeHtml(s.owner)}, release ${s.release}</span>
       </div>`).join("");
       const noteRows = notes.map(n => `<div class="kbnote"><div style="flex:1;">${escapeHtml(n.text)}</div><div class="kbnotewhen">${new Date(n.createdAt).toLocaleDateString()}</div></div>`).join("");
