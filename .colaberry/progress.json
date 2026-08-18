@@ -1,0 +1,13 @@
+{
+  "stories": {
+    "STORY-000": {
+      "title": "Command Center",
+      "release": "r0",
+      "status": "complete",
+      "completedAt": "2026-08-17",
+      "location": "docs/Assignment_1/command-center/",
+      "summary": "Nine-tab Command Center: Overview, Outcomes, Users & Use Case, Guardrails, Systems, Project Management, AI Agents, Knowledge Base, Data Model. Single data source (assets/data.js), global sample/real toggle, honest grey live-status indicators, one-level drilldown modals on every card.",
+      "verification": "Opened in browser and manually traced assets/site.js; automated JS syntax check (node) was unavailable in this environment."
+    }
+  }
+}
