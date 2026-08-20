@@ -1,0 +1,568 @@
+{
+  "schema_version": 2,
+  "project_name": "PowerBI Blueprint",
+  "descriptor": "An AI-powered system for automating the conversion of email-based requests and Excel reports into structured Power BI solutions.",
+  "requirements": [
+    {
+      "id": "REQ-001",
+      "kind": "FUNC",
+      "cluster": "Requirement Capture",
+      "priority": "must",
+      "statement": "The system must analyze email-based requests to identify business objectives, scope, KPIs, filters, calculations, visual requirements, and reporting expectations.",
+      "fulfilled_by": [
+        "STORY-001"
+      ]
+    },
+    {
+      "id": "REQ-002",
+      "kind": "FUNC",
+      "cluster": "Requirement Capture",
+      "priority": "must",
+      "statement": "The system must analyze existing Excel reports to identify business objectives, scope, KPIs, filters, calculations, visual requirements, and reporting expectations.",
+      "fulfilled_by": [
+        "STORY-001"
+      ]
+    },
+    {
+      "id": "REQ-003",
+      "kind": "FUNC",
+      "cluster": "Field Mapping",
+      "priority": "must",
+      "statement": "The system must map existing Excel fields to approved current tables and columns.",
+      "fulfilled_by": [
+        "STORY-004"
+      ]
+    },
+    {
+      "id": "REQ-004",
+      "kind": "FUNC",
+      "cluster": "Requirement Clarification",
+      "priority": "must",
+      "statement": "The system must detect missing, unclear, or conflicting requirements and generate follow-up questions.",
+      "fulfilled_by": [
+        "STORY-003"
+      ]
+    },
+    {
+      "id": "REQ-005",
+      "kind": "FUNC",
+      "cluster": "Design Recommendation",
+      "priority": "must",
+      "statement": "The system must recommend data models, relationships, transformations, validation checks, KPI definitions, DAX measures, report pages, slicers, and visual design based on approved requirements and field mappings.",
+      "fulfilled_by": [
+        "STORY-005"
+      ]
+    },
+    {
+      "id": "REQ-006",
+      "kind": "FUNC",
+      "cluster": "Dashboard Generation",
+      "priority": "must",
+      "statement": "The system must generate a dashboard mockup based on an approved organizational report template.",
+      "fulfilled_by": [
+        "STORY-006"
+      ]
+    },
+    {
+      "id": "REQ-007",
+      "kind": "FUNC",
+      "cluster": "Dashboard Generation",
+      "priority": "must",
+      "statement": "The system must generate a draft Power BI solution based on an approved organizational report template.",
+      "fulfilled_by": [
+        "STORY-007"
+      ]
+    },
+    {
+      "id": "REQ-008",
+      "kind": "FUNC",
+      "cluster": "Lifecycle Management",
+      "priority": "must",
+      "statement": "Users must be able to track the complete lifecycle of each request from intake to completion.",
+      "fulfilled_by": [
+        "STORY-001",
+        "STORY-002"
+      ]
+    },
+    {
+      "id": "REQ-009",
+      "kind": "CONSTRAINT",
+      "cluster": "Integration",
+      "priority": "must",
+      "statement": "The system must use Outlook, Power Automate, SharePoint, AI services, and Power BI to orchestrate the workflow and store inputs and outputs.",
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-010",
+      "kind": "SAFE",
+      "cluster": "Audit and Compliance",
+      "priority": "must",
+      "statement": "The system must maintain a traceable status and approval history for each request.",
+      "fulfilled_by": [
+        "STORY-002"
+      ]
+    },
+    {
+      "id": "REQ-011",
+      "kind": "FUNC",
+      "cluster": "AI Assistance",
+      "priority": "must",
+      "statement": "AI must assist with analysis, recommendations, mapping, documentation, mockups, and draft generation.",
+      "fulfilled_by": [
+        "STORY-005"
+      ]
+    },
+    {
+      "id": "REQ-012",
+      "kind": "SAFE",
+      "cluster": "AI Governance",
+      "priority": "must",
+      "statement": "AI must not finalize business requirements, approve calculations, or publish a production dashboard without authorized human review and approval.",
+      "fulfilled_by": [
+        "STORY-008"
+      ]
+    },
+    {
+      "id": "REQ-013",
+      "kind": "FUNC",
+      "cluster": "Stakeholder Interaction",
+      "priority": "must",
+      "statement": "The system must provide a user interface for stakeholders to review and approve draft Power BI solutions.",
+      "fulfilled_by": [
+        "STORY-008"
+      ]
+    },
+    {
+      "id": "REQ-014",
+      "kind": "FUNC",
+      "cluster": "Data Validation",
+      "priority": "must",
+      "statement": "The system must validate data before generating the draft Power BI solution.",
+      "fulfilled_by": [
+        "STORY-009"
+      ]
+    },
+    {
+      "id": "REQ-015",
+      "kind": "FUNC",
+      "cluster": "Publication",
+      "priority": "must",
+      "statement": "The system must support the publication of approved Power BI dashboards.",
+      "fulfilled_by": [
+        "STORY-010"
+      ]
+    },
+    {
+      "id": "REQ-016",
+      "kind": "FUNC",
+      "cluster": "User Notifications",
+      "priority": "should",
+      "statement": "The system must provide notifications to users at key stages of the request lifecycle.",
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-017",
+      "kind": "FUNC",
+      "cluster": "User Adjustments",
+      "priority": "should",
+      "statement": "The system must allow users to manually adjust AI-generated recommendations before approval.",
+      "fulfilled_by": []
+    },
+    {
+      "id": "REQ-018",
+      "kind": "FUNC",
+      "cluster": "Template Management",
+      "priority": "should",
+      "statement": "The system must support multiple report templates for different organizational needs.",
+      "fulfilled_by": []
+    }
+  ],
+  "releases": [
+    {
+      "key": "r0",
+      "demo": "Show end-to-end request intake, analysis, and lifecycle tracking with audit trail.",
+      "goal": "Establish the basic workflow and trust mechanisms.",
+      "name": "Initial Setup and Trust Spine",
+      "week_end": 1,
+      "week_start": 0,
+      "story_ids": [
+        "STORY-001",
+        "STORY-002"
+      ],
+      "starts_on": null,
+      "ends_on": null,
+      "is_demo_target": false
+    },
+    {
+      "key": "r1",
+      "demo": "Demonstrate requirement analysis, clarification, and field mapping with AI assistance.",
+      "goal": "Enable requirement clarification and field mapping.",
+      "name": "Requirement Clarification and Field Mapping",
+      "week_end": 2,
+      "week_start": 1,
+      "story_ids": [
+        "STORY-003",
+        "STORY-004"
+      ],
+      "starts_on": null,
+      "ends_on": null,
+      "is_demo_target": false
+    },
+    {
+      "key": "r2",
+      "demo": "Show AI-generated design recommendations and dashboard mockups based on templates.",
+      "goal": "Provide design recommendations and generate dashboard mockups.",
+      "name": "Design Recommendation and Mockup Generation",
+      "week_end": 3,
+      "week_start": 2,
+      "story_ids": [
+        "STORY-005",
+        "STORY-006"
+      ],
+      "starts_on": null,
+      "ends_on": null,
+      "is_demo_target": false
+    },
+    {
+      "key": "r3",
+      "demo": "Demonstrate draft generation and stakeholder review interface with approval workflow.",
+      "goal": "Generate draft Power BI solutions and enable stakeholder review.",
+      "name": "Draft Generation and Stakeholder Review",
+      "week_end": 4,
+      "week_start": 3,
+      "story_ids": [
+        "STORY-007",
+        "STORY-008"
+      ],
+      "starts_on": null,
+      "ends_on": null,
+      "is_demo_target": false
+    },
+    {
+      "key": "r4",
+      "demo": "Show publication of approved dashboards with data validation and notifications.",
+      "goal": "Finalize and publish approved dashboards.",
+      "name": "Finalization and Publication",
+      "week_end": 5,
+      "week_start": 4,
+      "story_ids": [
+        "STORY-009",
+        "STORY-010"
+      ],
+      "starts_on": null,
+      "ends_on": null,
+      "is_demo_target": false
+    }
+  ],
+  "stories": [
+    {
+      "id": "STORY-001",
+      "title": "Request Intake and Initial Analysis",
+      "release": "r0",
+      "fulfills": [
+        "REQ-001",
+        "REQ-002",
+        "REQ-008"
+      ],
+      "narrative": "As a business analyst, I want to intake requests and perform initial analysis, so that I can understand the scope and objectives.",
+      "acceptance": [
+        "Given a new request, when it is submitted, then it is recorded in the system.",
+        "Given an Excel report, when it is uploaded, then the system analyzes it to identify business objectives and scope.",
+        "Trust: Given an analysis, when it is completed, then it is logged with a timestamp and analyst ID."
+      ],
+      "blocked_by": [],
+      "owner_agent": "Business Analyst",
+      "failure_paths": [
+        "Excel file is corrupted",
+        "Excel file has unsupported format",
+        "Analysis module fails to extract data"
+      ],
+      "task_guidance": "Implement the analysis module to parse Excel reports and extract objectives, scope, KPIs, filters, calculations, visual requirements, and reporting expectations.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-002",
+      "title": "Lifecycle Tracking Setup",
+      "release": "r0",
+      "fulfills": [
+        "REQ-008",
+        "REQ-010"
+      ],
+      "narrative": "As a project manager, I want to track the lifecycle of requests, so that I can monitor progress and status.",
+      "acceptance": [
+        "Given a new request, when it is logged, then the system tracks its lifecycle stages.",
+        "Given a request update, when it is processed, then the system updates the status and history.",
+        "Trust: The system maintains an audit trail of status changes."
+      ],
+      "blocked_by": [],
+      "owner_agent": "Project Manager",
+      "failure_paths": [
+        "Lifecycle tracking fails",
+        "Status update errors",
+        "Audit trail incomplete"
+      ],
+      "task_guidance": "Set up SharePoint lists for lifecycle tracking and status updates. Ensure audit logging is enabled.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-003",
+      "title": "Requirement Clarification",
+      "release": "r1",
+      "fulfills": [
+        "REQ-004"
+      ],
+      "narrative": "As a business analyst, I want to clarify unclear requirements, so that I can ensure complete and accurate information.",
+      "acceptance": [
+        "Given an unclear requirement, when it is detected, then the system generates follow-up questions.",
+        "Given a complete requirement, when it is reviewed, then no follow-up questions are generated.",
+        "Trust: The system logs all clarification interactions in the audit trail."
+      ],
+      "blocked_by": [
+        "STORY-002"
+      ],
+      "owner_agent": "Business Analyst",
+      "failure_paths": [
+        "AI fails to detect unclear requirements",
+        "Follow-up questions are incorrect",
+        "Audit trail logging fails"
+      ],
+      "task_guidance": "Implement AI-driven requirement analysis and question generation. Log interactions in SharePoint.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-004",
+      "title": "Field Mapping from Excel",
+      "release": "r1",
+      "fulfills": [
+        "REQ-003"
+      ],
+      "narrative": "As a data specialist, I want to map Excel fields to approved tables, so that I can ensure data consistency.",
+      "acceptance": [
+        "Given an Excel report, when it is uploaded, then the system maps fields to approved tables.",
+        "Given a field with no mapping, when it is processed, then the system flags it for review.",
+        "Trust: The system logs all mapping actions in the audit trail."
+      ],
+      "blocked_by": [
+        "STORY-002"
+      ],
+      "owner_agent": "Data Specialist",
+      "failure_paths": [
+        "Excel upload fails",
+        "Field mapping errors",
+        "Audit trail logging fails"
+      ],
+      "task_guidance": "Use Power Automate to process Excel uploads and map fields. Log mapping actions in SharePoint.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-005",
+      "title": "Design Recommendation Generation",
+      "release": "r2",
+      "fulfills": [
+        "REQ-005",
+        "REQ-011"
+      ],
+      "narrative": "As a business analyst, I want AI to assist in generating design recommendations, so that I can create effective mockups.",
+      "acceptance": [
+        "Given a set of requirements, when AI processes them, then it generates design recommendations.",
+        "Given incomplete data, when AI processes it, then it flags missing information.",
+        "Trust: Given AI-generated recommendations, when they are created, then they are logged for review."
+      ],
+      "blocked_by": [
+        "STORY-004"
+      ],
+      "owner_agent": "Business Analyst",
+      "failure_paths": [
+        "AI fails to generate recommendations",
+        "AI generates incorrect recommendations",
+        "AI recommendations are not logged"
+      ],
+      "task_guidance": "Integrate AI to assist with analysis, recommendations, mapping, documentation, mockups, and draft generation.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-006",
+      "title": "Dashboard Mockup Generation",
+      "release": "r2",
+      "fulfills": [
+        "REQ-006"
+      ],
+      "narrative": "As a report designer, I want to generate dashboard mockups, so that I can visualize the report layout.",
+      "acceptance": [
+        "Given a design recommendation, when processed, then the system generates a dashboard mockup.",
+        "Given a mockup, when reviewed, then it matches the approved template.",
+        "Trust: The system logs mockup generation in the audit trail."
+      ],
+      "blocked_by": [
+        "STORY-005"
+      ],
+      "owner_agent": "Report Designer",
+      "failure_paths": [
+        "Mockup generation fails",
+        "Mockup does not match template",
+        "Audit trail logging fails"
+      ],
+      "task_guidance": "Use Power BI to generate mockups based on design recommendations. Log mockup generation in SharePoint.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-007",
+      "title": "Draft Power BI Solution Generation",
+      "release": "r3",
+      "fulfills": [
+        "REQ-007"
+      ],
+      "narrative": "As a report designer, I want to generate draft Power BI solutions, so that I can prepare for stakeholder review.",
+      "acceptance": [
+        "Given a dashboard mockup, when processed, then the system generates a draft Power BI solution.",
+        "Given a draft solution, when reviewed, then it aligns with the mockup.",
+        "Trust: The system logs draft generation in the audit trail."
+      ],
+      "blocked_by": [
+        "STORY-006"
+      ],
+      "owner_agent": "Report Designer",
+      "failure_paths": [
+        "Draft generation fails",
+        "Draft does not align with mockup",
+        "Audit trail logging fails"
+      ],
+      "task_guidance": "Use Power BI to generate draft solutions from mockups. Log draft generation in SharePoint.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-008",
+      "title": "Stakeholder Review Interface",
+      "release": "r3",
+      "fulfills": [
+        "REQ-013",
+        "REQ-012"
+      ],
+      "narrative": "As a stakeholder, I want to review AI-generated drafts, so that I can approve or request changes before finalization.",
+      "acceptance": [
+        "Given a draft, when it is ready for review, then stakeholders can access it.",
+        "Given a draft, when a stakeholder requests changes, then the system logs the request.",
+        "Trust: Given a draft, when it is approved, then it is logged with the approver's ID and timestamp."
+      ],
+      "blocked_by": [
+        "STORY-007"
+      ],
+      "owner_agent": "Stakeholder",
+      "failure_paths": [
+        "Stakeholder cannot access the draft",
+        "Stakeholder feedback is not recorded",
+        "Draft is finalized without approval"
+      ],
+      "task_guidance": "Develop an interface for stakeholders to review and approve AI-generated drafts, ensuring no finalization without human approval.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-009",
+      "title": "Data Validation and Finalization",
+      "release": "r4",
+      "fulfills": [
+        "REQ-014"
+      ],
+      "narrative": "As a data specialist, I want to validate data before finalizing dashboards, so that I can ensure accuracy.",
+      "acceptance": [
+        "Given a draft solution, when validated, then data accuracy is confirmed.",
+        "Given a validation failure, when detected, then the system flags it for correction.",
+        "Trust: The system logs all validation actions in the audit trail."
+      ],
+      "blocked_by": [
+        "STORY-008"
+      ],
+      "owner_agent": "Data Specialist",
+      "failure_paths": [
+        "Validation fails",
+        "Data accuracy not confirmed",
+        "Audit trail logging fails"
+      ],
+      "task_guidance": "Implement data validation checks using Power BI. Log validation actions in SharePoint.",
+      "due_on": null,
+      "due_baseline_on": null
+    },
+    {
+      "id": "STORY-010",
+      "title": "Dashboard Publication",
+      "release": "r4",
+      "fulfills": [
+        "REQ-015"
+      ],
+      "narrative": "As a report designer, I want to publish approved dashboards, so that they are available to stakeholders.",
+      "acceptance": [
+        "Given an approved dashboard, when published, then it is available to stakeholders.",
+        "Given a publication failure, when detected, then the system alerts the designer.",
+        "Trust: The system logs all publication actions in the audit trail."
+      ],
+      "blocked_by": [
+        "STORY-009"
+      ],
+      "owner_agent": "Report Designer",
+      "failure_paths": [
+        "Publication fails",
+        "Dashboard not available",
+        "Audit trail logging fails"
+      ],
+      "task_guidance": "Use Power BI to publish dashboards. Log publication actions in SharePoint.",
+      "due_on": null,
+      "due_baseline_on": null
+    }
+  ],
+  "agents": [],
+  "project": {
+    "name": "PowerBI Blueprint",
+    "descriptor": "An AI-powered system for automating the conversion of email-based requests and Excel reports into structured Power BI solutions.",
+    "repo_url": null,
+    "plan_version": 1,
+    "plan_sha256": "1c8d3004150df75863745339a70f3e5d0480895d2d655e4b85df548b0085aaea"
+  },
+  "schedule": null,
+  "derived": {
+    "measures": [],
+    "guardrails": [
+      {
+        "id": "REQ-010",
+        "statement": "The system must maintain a traceable status and approval history for each request."
+      },
+      {
+        "id": "REQ-012",
+        "statement": "AI must not finalize business requirements, approve calculations, or publish a production dashboard without authorized human review and approval."
+      }
+    ],
+    "systems": [
+      "Outlook",
+      "Power Automate",
+      "SharePoint",
+      "Power BI"
+    ],
+    "roles": [
+      "business analyst",
+      "project manager",
+      "data specialist",
+      "report designer",
+      "stakeholder"
+    ],
+    "counts": {
+      "requirements_total": 18,
+      "requirements_by_kind": {
+        "CONSTRAINT": 1,
+        "FUNC": 15,
+        "SAFE": 2
+      },
+      "stories_total": 10,
+      "releases_total": 5,
+      "agents_total": 0,
+      "failure_paths_total": 25,
+      "agents_by_autonomy": {}
+    }
+  }
+}

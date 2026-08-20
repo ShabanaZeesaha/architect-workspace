@@ -21,8 +21,12 @@
     return String(s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   }
   function fmtDate(iso) {
-    if (!iso) return "—";
+    if (!iso) return "Not yet scheduled";
     return new Date(iso + "T00:00:00").toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
+  }
+  function fmtDateTime(iso) {
+    if (!iso) return "unknown";
+    return new Date(iso).toLocaleString(undefined, { year: "numeric", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   }
   function fmtRelativeChecked(iso) {
     if (!iso) return "never checked";
@@ -34,9 +38,10 @@
     return Math.round(hrs / 24) + "d ago";
   }
   function currentRelease(releases) {
+    if (!releases.length || !releases[0].start) return "unscheduled";
     const now = Date.now();
     for (const r of releases) {
-      if (now >= new Date(r.start + "T00:00:00").getTime() && now < new Date(r.end + "T00:00:00").getTime()) return r.id;
+      if (r.start && r.end && now >= new Date(r.start + "T00:00:00").getTime() && now < new Date(r.end + "T00:00:00").getTime()) return r.id;
     }
     if (now < new Date(releases[0].start + "T00:00:00").getTime()) return null;
     return "done";
@@ -64,6 +69,37 @@
   function sampleBannerHTML(mode) {
     if (mode !== "sample") return "";
     return `<div class="samplebanner"><b>SAMPLE DATA</b> — believable made-up data so you can see the shape of this tab. Switch to Real to see what the project has actually produced.</div>`;
+  }
+  function dataAgeHTML(mode, data) {
+    if (mode === "sample") {
+      return `<div class="samplebanner" style="background:var(--slate-bg); color:var(--muted); border-color:var(--border);">Sample data — not read from .colaberry/manifest.json, so it carries no live timestamp.</div>`;
+    }
+    if (!data.manifestGeneratedAt) {
+      return `<div class="samplebanner" style="background:var(--red-bg); color:var(--red); border-color:var(--red);"><b>No data timestamp</b> — .colaberry/manifest.json did not provide generated_at.</div>`;
+    }
+    const ageMs = Date.now() - new Date(data.manifestGeneratedAt).getTime();
+    const ageDays = ageMs / 86400000;
+    const ageLabel = ageDays < 1 ? "less than a day old" : `${Math.floor(ageDays)} day${Math.floor(ageDays) === 1 ? "" : "s"} old`;
+    if (ageDays > 7) {
+      return `<div class="samplebanner" style="background:var(--red-bg); color:var(--red); border-color:var(--red);"><b>Data is stale</b> — generated ${fmtDateTime(data.manifestGeneratedAt)} (${ageLabel}), over the 7-day freshness limit.</div>`;
+    }
+    return `<div class="samplebanner" style="background:var(--slate-bg); color:var(--muted); border-color:var(--border);">Data as of ${fmtDateTime(data.manifestGeneratedAt)} (${ageLabel}) — from .colaberry/manifest.json.</div>`;
+  }
+  function loadErrorHTML(err) {
+    const isFileProtocol = location.protocol === "file:";
+    return `
+    <div class="pagehead"><h1>Could not load project data</h1><p class="sub">Real mode reads .colaberry/plan.json, .colaberry/progress.json, and .colaberry/manifest.json at runtime. That read failed, so nothing below is fabricated to fill the gap.</p></div>
+    <div class="card">
+      <div class="samplebanner" style="background:var(--red-bg); color:var(--red); border-color:var(--red);"><b>Load error</b> — ${escapeHtml(err.message)}</div>
+      ${isFileProtocol ? `
+      <p style="font-size:13.5px;">This page was opened directly from disk (<code>file://</code>), and browsers block <code>fetch()</code> of local JSON files under that protocol. Serve this folder over HTTP instead:</p>
+      <ol style="font-size:13.5px;">
+        <li>Open a terminal at the repository root (<code>architect-workspace</code>, the folder containing <code>.colaberry/</code>).</li>
+        <li>Run: <code>python -m http.server 8000</code></li>
+        <li>Open: <code>http://localhost:8000/docs/Assignment_1/command-center/index.html</code></li>
+      </ol>` : `<p style="font-size:13.5px;">Confirm the three files exist under <code>.colaberry/</code> at the repository root and that this page is being served over HTTP from that same repository.</p>`}
+      <p style="font-size:13.5px;">Sample mode does not need these files — the toggle above still works.</p>
+    </div>`;
   }
   function modalShellHTML() {
     return `<div class="modalbg" id="modalBg"><div class="modalpanel" id="modalPanel"></div></div>`;
@@ -146,8 +182,23 @@
 
   /* ============================== GANTT ============================== */
   function ganttHTML(data) {
+    if (!data.scheduleKnown) {
+      // No starts_on/ends_on in the plan yet — position bars by relative week number
+      // instead of inventing calendar dates.
+      const maxWeek = Math.max(1, ...data.releases.map(r => r.weekEnd || 0));
+      const rows = data.releases.map(r => {
+        const left = ((r.weekStart || 0) / maxWeek) * 100;
+        const width = (((r.weekEnd || 0) - (r.weekStart || 0)) / maxWeek) * 100;
+        return `<div class="ganttrow">
+          <div>${r.id} — ${escapeHtml(r.name)}</div>
+          <div class="gantttrack"><div class="ganttbar" data-drill="release::${r.id}" style="left:${left}%; width:${Math.max(width, 4)}%;">${r.stories} stories</div></div>
+        </div>`;
+      }).join("");
+      return `<div class="gantt" style="position:relative;">${rows}</div>
+      <p class="cardsub" style="margin-top:2px;">Positioned by relative week number (week 0 = plan start) — <code>starts_on</code>/<code>ends_on</code> aren't set in .colaberry/plan.json yet, so no calendar dates are shown.</p>`;
+    }
     const spanStart = new Date(data.releases[0].start + "T00:00:00").getTime();
-    const spanEnd = new Date(data.project.demoDate + "T00:00:00").getTime();
+    const spanEnd = new Date((data.project.demoDate || data.releases[data.releases.length - 1].end) + "T00:00:00").getTime();
     const total = spanEnd - spanStart;
     const pct = iso => Math.max(0, Math.min(100, ((new Date(iso + "T00:00:00").getTime() - spanStart) / total) * 100));
     const rows = data.releases.map(r => {
@@ -157,11 +208,14 @@
         <div class="gantttrack"><div class="ganttbar" data-drill="release::${r.id}" style="left:${left}%; width:${width}%;">${r.stories} stories</div></div>
       </div>`;
     }).join("");
-    const prepLeft = pct(data.project.buildEndDate), prepWidth = pct(data.project.demoDate) - prepLeft;
-    const prepRow = `<div class="ganttrow">
-      <div>Demo prep</div>
-      <div class="gantttrack"><div class="ganttbar" style="left:${prepLeft}%; width:${prepWidth}%; background:var(--slate); color:var(--bg);">→ ${fmtDate(data.project.demoDate)}</div></div>
-    </div>`;
+    let prepRow = "";
+    if (data.project.buildEndDate && data.project.demoDate) {
+      const prepLeft = pct(data.project.buildEndDate), prepWidth = pct(data.project.demoDate) - prepLeft;
+      prepRow = `<div class="ganttrow">
+        <div>Demo prep</div>
+        <div class="gantttrack"><div class="ganttbar" style="left:${prepLeft}%; width:${prepWidth}%; background:var(--slate); color:var(--bg);">→ ${fmtDate(data.project.demoDate)}</div></div>
+      </div>`;
+    }
     const todayPct = pct(new Date().toISOString().slice(0, 10));
     const todayLine = todayPct >= 0 && todayPct <= 100 ? `<div class="gantttoday" style="left:${todayPct}%"></div>` : "";
     return `<div class="gantt" style="position:relative;">${rows}${prepRow}${todayLine}</div>`;
@@ -191,12 +245,24 @@
       const pct = Math.round((doneCount / total) * 100);
       const guardrails = data.requirements.filter(r => data.guardrailIds.includes(r.id));
       const guardRows = guardrails.map(g => `<div class="grow clickcard" data-drill="req::${g.id}"><span class="gid">${g.id}</span><span class="gtext">${escapeHtml(g.text)}</span></div>`).join("");
+      let releaseStatusText;
+      if (curRel === "unscheduled") releaseStatusText = "Release order is set (r0 → r4), but calendar dates aren't in the plan yet — this reads exactly what .colaberry/plan.json has.";
+      else if (curRel === "done") releaseStatusText = "All planned releases have reached their end date.";
+      else if (curRel === null) releaseStatusText = "The first release has not started yet.";
+      else releaseStatusText = `You are currently in <b>${curRel}</b>.`;
+      const demoText = data.project.demoDate ? `Demo day is ${fmtDate(data.project.demoDate)}.` : "No demo date is scheduled in the plan yet.";
+      const selfCheckCard = data.selfCheck && data.selfCheck.length ? `
+        <div class="card">
+          <h2>This Command Center (STORY-000) ${tag}</h2>
+          <p class="cardsub">Read live from .colaberry/progress.json.</p>
+          <div class="guardmini">${data.selfCheck.map(c => `<div class="grow"><span class="gid" style="color:${c.passed ? "var(--green)" : "var(--red)"}; background:${c.passed ? "var(--green-bg)" : "var(--red-bg)"};">${c.passed ? "PASS" : "FAIL"}</span><span class="gtext">${escapeHtml(c.text)}</span></div>`).join("")}</div>
+        </div>` : "";
       return `
       <div class="pagehead"><h1>Overview</h1><p class="sub">${escapeHtml(data.project.pitch)}</p></div>
       <div class="grid2">
         <div class="card">
           <h2>Release timeline</h2>
-          <p class="cardsub">${curRel && curRel !== "done" ? `You are currently in <b>${curRel}</b>.` : curRel === "done" ? "All planned releases have reached their end date." : "The first release has not started yet."} Demo day is ${fmtDate(data.project.demoDate)}.</p>
+          <p class="cardsub">${releaseStatusText} ${demoText}</p>
           <div class="releasestrip">${releaseRows}</div>
         </div>
         <div class="card">
@@ -218,6 +284,7 @@
           <div class="guardmini">${guardRows}</div>
         </div>
       </div>
+      ${selfCheckCard}
       <p class="footnote">${isSample ? "Sample snapshot — for shape only." : "Real mode — reflects what this project has actually produced so far."}</p>`;
     },
 
@@ -276,14 +343,15 @@
     },
 
     pm(data) {
-      const rows = data.stories.slice().sort((a, b) => a.due.localeCompare(b.due)).map(s => `
+      const sortKey = s => s.due || `zz-${s.release}-${s.id}`;
+      const rows = data.stories.slice().sort((a, b) => sortKey(a).localeCompare(sortKey(b))).map(s => `
         <tr class="clickcard" data-drill="story::${s.id}">
           <td><code>${s.id}</code></td><td>${escapeHtml(s.title)}</td><td>${s.release}</td>
           <td>${fmtDate(s.due)}</td><td>${escapeHtml(s.owner)}</td>
           <td><span class="statuspill ${s.status}">${storyStatusLabel(s.status)}</span></td>
         </tr>`).join("");
       return `
-      <div class="pagehead"><h1>Project Management</h1><p class="sub">Real releases, real due dates. Demo day is ${fmtDate(data.project.demoDate)}.</p></div>
+      <div class="pagehead"><h1>Project Management</h1><p class="sub">${data.project.demoDate ? `Demo day is ${fmtDate(data.project.demoDate)}.` : "No demo date is scheduled in the plan yet."}</p></div>
       <div class="card">${ganttHTML(data)}</div>
       <div class="card">
         <h2>All tasks</h2>
@@ -386,15 +454,38 @@
     });
   }
 
-  function render(pageId) {
+  async function render(pageId) {
     const mode = getMode();
-    const data = window.CommandCenterData.getData(mode);
+    let data, err = null;
+    if (mode === "sample") {
+      data = window.CommandCenterData.SAMPLE_DATA;
+    } else {
+      try {
+        const { plan, progress, manifest } = await window.CommandCenterData.loadRuntimeFiles();
+        data = window.CommandCenterData.buildRealData(plan, progress, manifest);
+      } catch (e) {
+        err = e;
+      }
+    }
+
+    if (err) {
+      document.getElementById("app").innerHTML =
+        topbarHTML(pageId, mode) + `<div class="wrap">${loadErrorHTML(err)}</div>` + modalShellHTML();
+      initShellChrome();
+      return;
+    }
+
     document.getElementById("app").innerHTML =
       topbarHTML(pageId, mode) +
-      `<div class="wrap">${sampleBannerHTML(mode)}${builders[pageId](data, mode)}</div>` +
+      `<div class="wrap">${sampleBannerHTML(mode)}${dataAgeHTML(mode, data)}${builders[pageId](data, mode)}</div>` +
       modalShellHTML();
     initShell(pageId, data);
     if (pageId === "kb") initKb();
+  }
+
+  function initShellChrome() {
+    const sw = document.getElementById("modeSwitch");
+    if (sw) sw.addEventListener("change", () => setMode(sw.checked ? "sample" : "real"));
   }
 
   window.CC = { render };
