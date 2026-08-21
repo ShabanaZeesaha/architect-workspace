@@ -13,16 +13,186 @@
           "passed": true
         },
         {
-          "text": "Given the data files, when any tab renders, then its content comes from .colaberry/plan.json and .colaberry/progress.json read at runtime rather than from hard-coded values.",
+          "text": "Given the Command Center, when any tab renders, then .colaberry/plan.json and .colaberry/progress.json are both committed in this repo and every tab reads its content from them at runtime rather than from hard-coded values.",
           "passed": true
         },
         {
-          "text": "Given .colaberry/manifest.json, when any tab is shown, then it displays how old the data is and warns when that age exceeds a week.",
+          "text": "Given the Command Center, when any tab is shown, then .colaberry/manifest.json is committed in this repo and every tab shows how old that data is and warns when the age exceeds a week.",
           "passed": true
         },
         {
-          "text": "Trust - no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
+        }
+      ]
+    },
+    {
+      "id": "STORY-001",
+      "criteria": [
+        {
+          "text": "Given a new request, when it is submitted, then it is recorded in the system.",
+          "passed": false
+        },
+        {
+          "text": "Given an Excel report, when it is uploaded, then the system analyzes it to identify business objectives and scope.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given an analysis, when it is completed, then it is logged with a timestamp and analyst ID.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "STORY-002",
+      "criteria": [
+        {
+          "text": "Given a new request, when it is logged, then the system tracks its lifecycle stages.",
+          "passed": false
+        },
+        {
+          "text": "Given a request update, when it is processed, then the system updates the status and history.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system maintains an audit trail of status changes.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "STORY-003",
+      "criteria": [
+        {
+          "text": "Given an unclear requirement, when it is detected, then the system generates follow-up questions.",
+          "passed": false
+        },
+        {
+          "text": "Given a complete requirement, when it is reviewed, then no follow-up questions are generated.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all clarification interactions in the audit trail.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "STORY-004",
+      "criteria": [
+        {
+          "text": "Given an Excel report, when it is uploaded, then the system maps fields to approved tables.",
+          "passed": false
+        },
+        {
+          "text": "Given a field with no mapping, when it is processed, then the system flags it for review.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all mapping actions in the audit trail.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "STORY-005",
+      "criteria": [
+        {
+          "text": "Given a set of requirements, when AI processes them, then it generates design recommendations.",
+          "passed": false
+        },
+        {
+          "text": "Given incomplete data, when AI processes it, then it flags missing information.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given AI-generated recommendations, when they are created, then they are logged for review.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "STORY-006",
+      "criteria": [
+        {
+          "text": "Given a design recommendation, when processed, then the system generates a dashboard mockup.",
+          "passed": false
+        },
+        {
+          "text": "Given a mockup, when reviewed, then it matches the approved template.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs mockup generation in the audit trail.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "STORY-007",
+      "criteria": [
+        {
+          "text": "Given a dashboard mockup, when processed, then the system generates a draft Power BI solution.",
+          "passed": false
+        },
+        {
+          "text": "Given a draft solution, when reviewed, then it aligns with the mockup.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs draft generation in the audit trail.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "STORY-008",
+      "criteria": [
+        {
+          "text": "Given a draft, when it is ready for review, then stakeholders can access it.",
+          "passed": false
+        },
+        {
+          "text": "Given a draft, when a stakeholder requests changes, then the system logs the request.",
+          "passed": false
+        },
+        {
+          "text": "Trust: Given a draft, when it is approved, then it is logged with the approver's ID and timestamp.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "STORY-009",
+      "criteria": [
+        {
+          "text": "Given a draft solution, when validated, then data accuracy is confirmed.",
+          "passed": false
+        },
+        {
+          "text": "Given a validation failure, when detected, then the system flags it for correction.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all validation actions in the audit trail.",
+          "passed": false
+        }
+      ]
+    },
+    {
+      "id": "STORY-010",
+      "criteria": [
+        {
+          "text": "Given an approved dashboard, when published, then it is available to stakeholders.",
+          "passed": false
+        },
+        {
+          "text": "Given a publication failure, when detected, then the system alerts the designer.",
+          "passed": false
+        },
+        {
+          "text": "Trust: The system logs all publication actions in the audit trail.",
+          "passed": false
         }
       ]
     }
