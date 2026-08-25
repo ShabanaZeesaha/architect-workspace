@@ -1,8 +1,21 @@
 {
   "schema_version": 2,
+  "project": "PowerBI Blueprint",
+  "totals": {
+    "stories_total": 11,
+    "stories_verified": 1,
+    "stories_submitted": 0,
+    "stories_in_progress": 10,
+    "stories_not_started": 0,
+    "criteria_total": 35,
+    "criteria_passed": 5,
+    "points_awarded": 73
+  },
   "stories": [
     {
       "id": "STORY-000",
+      "release": null,
+      "acceptance_total": 5,
       "criteria": [
         {
           "text": "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
@@ -24,27 +37,65 @@
           "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "verified",
+        "criteria_passed": 5,
+        "criteria_total": 5,
+        "verified_at": "2026-08-20T01:03:21.243Z",
+        "commit_sha": "2bf9f32cc7f0309b083c8d320ad53d91a14dc463",
+        "commit_url": "https://github.com/ShabanaZeesaha/architect-workspace/commit/2bf9f32cc7f0309b083c8d320ad53d91a14dc463",
+        "commit_at": "2026-08-18T00:47:41Z",
+        "points_awarded": 73,
+        "outstanding": []
+      }
     },
     {
       "id": "STORY-001",
+      "release": "r0",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given a new request, when it is submitted, then it is recorded in the system.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given an Excel report, when it is uploaded, then the system analyzes it to identify business objectives and scope.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Given an analysis, when it is completed, then it is logged with a timestamp and analyst ID.",
-          "passed": false
+          "passed": true
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": "cfc1ee42a490122aa7a9e1ea319668ed15171976",
+        "commit_url": "https://github.com/ShabanaZeesaha/architect-workspace/commit/cfc1ee42a490122aa7a9e1ea319668ed15171976",
+        "commit_at": "2026-08-25T00:05:17Z",
+        "points_awarded": null,
+        "outstanding": [
+          "Given a new request, when it is submitted, then it is recorded in the system.",
+          "Given an Excel report, when it is uploaded, then the system analyzes it to identify business objectives and scope.",
+          "Trust: Given an analysis, when it is completed, then it is logged with a timestamp and analyst ID."
+        ]
+      }
     },
     {
       "id": "STORY-002",
+      "release": "r0",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given a new request, when it is logged, then the system tracks its lifecycle stages.",
@@ -58,10 +109,31 @@
           "text": "Trust: The system maintains an audit trail of status changes.",
           "passed": false
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a new request, when it is logged, then the system tracks its lifecycle stages.",
+          "Given a request update, when it is processed, then the system updates the status and history.",
+          "Trust: The system maintains an audit trail of status changes."
+        ]
+      }
     },
     {
       "id": "STORY-003",
+      "release": "r1",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given an unclear requirement, when it is detected, then the system generates follow-up questions.",
@@ -75,10 +147,31 @@
           "text": "Trust: The system logs all clarification interactions in the audit trail.",
           "passed": false
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given an unclear requirement, when it is detected, then the system generates follow-up questions.",
+          "Given a complete requirement, when it is reviewed, then no follow-up questions are generated.",
+          "Trust: The system logs all clarification interactions in the audit trail."
+        ]
+      }
     },
     {
       "id": "STORY-004",
+      "release": "r1",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given an Excel report, when it is uploaded, then the system maps fields to approved tables.",
@@ -92,10 +185,31 @@
           "text": "Trust: The system logs all mapping actions in the audit trail.",
           "passed": false
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given an Excel report, when it is uploaded, then the system maps fields to approved tables.",
+          "Given a field with no mapping, when it is processed, then the system flags it for review.",
+          "Trust: The system logs all mapping actions in the audit trail."
+        ]
+      }
     },
     {
       "id": "STORY-005",
+      "release": "r2",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given a set of requirements, when AI processes them, then it generates design recommendations.",
@@ -109,10 +223,31 @@
           "text": "Trust: Given AI-generated recommendations, when they are created, then they are logged for review.",
           "passed": false
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a set of requirements, when AI processes them, then it generates design recommendations.",
+          "Given incomplete data, when AI processes it, then it flags missing information.",
+          "Trust: Given AI-generated recommendations, when they are created, then they are logged for review."
+        ]
+      }
     },
     {
       "id": "STORY-006",
+      "release": "r2",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given a design recommendation, when processed, then the system generates a dashboard mockup.",
@@ -126,10 +261,31 @@
           "text": "Trust: The system logs mockup generation in the audit trail.",
           "passed": false
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a design recommendation, when processed, then the system generates a dashboard mockup.",
+          "Given a mockup, when reviewed, then it matches the approved template.",
+          "Trust: The system logs mockup generation in the audit trail."
+        ]
+      }
     },
     {
       "id": "STORY-007",
+      "release": "r3",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given a dashboard mockup, when processed, then the system generates a draft Power BI solution.",
@@ -143,10 +299,31 @@
           "text": "Trust: The system logs draft generation in the audit trail.",
           "passed": false
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a dashboard mockup, when processed, then the system generates a draft Power BI solution.",
+          "Given a draft solution, when reviewed, then it aligns with the mockup.",
+          "Trust: The system logs draft generation in the audit trail."
+        ]
+      }
     },
     {
       "id": "STORY-008",
+      "release": "r3",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given a draft, when it is ready for review, then stakeholders can access it.",
@@ -160,10 +337,31 @@
           "text": "Trust: Given a draft, when it is approved, then it is logged with the approver's ID and timestamp.",
           "passed": false
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a draft, when it is ready for review, then stakeholders can access it.",
+          "Given a draft, when a stakeholder requests changes, then the system logs the request.",
+          "Trust: Given a draft, when it is approved, then it is logged with the approver's ID and timestamp."
+        ]
+      }
     },
     {
       "id": "STORY-009",
+      "release": "r4",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given a draft solution, when validated, then data accuracy is confirmed.",
@@ -177,10 +375,31 @@
           "text": "Trust: The system logs all validation actions in the audit trail.",
           "passed": false
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given a draft solution, when validated, then data accuracy is confirmed.",
+          "Given a validation failure, when detected, then the system flags it for correction.",
+          "Trust: The system logs all validation actions in the audit trail."
+        ]
+      }
     },
     {
       "id": "STORY-010",
+      "release": "r4",
+      "acceptance_total": 3,
       "criteria": [
         {
           "text": "Given an approved dashboard, when published, then it is available to stakeholders.",
@@ -194,7 +413,26 @@
           "text": "Trust: The system logs all publication actions in the audit trail.",
           "passed": false
         }
-      ]
+      ],
+      "files_touched": [],
+      "tests_added": [],
+      "notes": null,
+      "updated_at": null,
+      "verification": {
+        "state": "in_progress",
+        "criteria_passed": 0,
+        "criteria_total": 3,
+        "verified_at": null,
+        "commit_sha": null,
+        "commit_url": null,
+        "commit_at": null,
+        "points_awarded": null,
+        "outstanding": [
+          "Given an approved dashboard, when published, then it is available to stakeholders.",
+          "Given a publication failure, when detected, then the system alerts the designer.",
+          "Trust: The system logs all publication actions in the audit trail."
+        ]
+      }
     }
   ]
 }
