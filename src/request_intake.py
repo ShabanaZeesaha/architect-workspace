@@ -5,7 +5,9 @@ import uuid
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-INITIAL_STATUS = "intake"
+from src.lifecycle import INITIAL_STATUS, TRANSITIONS, VALID_STATUSES, InvalidTransitionError
+
+__all__ = ["AuditEntry", "InvalidTransitionError", "RequestIntake"]
 
 _SCHEMA = """
 CREATE TABLE IF NOT EXISTS requests (
@@ -129,6 +131,43 @@ class RequestIntake:
                     "(request_id, analyst_id, event, timestamp, error_category) "
                     "VALUES (?, ?, ?, ?, ?)",
                     (request_id, analyst_id, "analysis_failed", timestamp, error_category),
+                )
+        finally:
+            conn.close()
+        return self.get_request(request_id)
+
+    def update_status(self, request_id: str, analyst_id: str, new_status: str) -> dict:
+        if new_status not in VALID_STATUSES:
+            raise ValueError(f"Invalid status: {new_status!r}")
+
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+        conn = self._connect()
+        try:
+            with conn:
+                row = conn.execute(
+                    "SELECT status FROM requests WHERE request_id = ?", (request_id,)
+                ).fetchone()
+                if row is None:
+                    raise KeyError(f"Unknown request_id: {request_id}")
+
+                current_status = row["status"]
+                if new_status == current_status:
+                    return self.get_request(request_id)
+
+                if new_status not in TRANSITIONS[current_status]:
+                    raise InvalidTransitionError(
+                        f"Cannot transition from {current_status!r} to {new_status!r}"
+                    )
+
+                conn.execute(
+                    "UPDATE requests SET status = ? WHERE request_id = ?",
+                    (new_status, request_id),
+                )
+                conn.execute(
+                    "INSERT INTO audit_log (request_id, analyst_id, event, timestamp) "
+                    "VALUES (?, ?, ?, ?)",
+                    (request_id, analyst_id, "status_updated", timestamp),
                 )
         finally:
             conn.close()

@@ -81,6 +81,131 @@ def test_submit_request_records_a_valid_request_and_audit_entry(tmp_path):
     assert audit_log[0].timestamp == body["submitted_at"]
 
 
+def test_get_request_returns_current_status_and_audit_trail_in_order(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    create_response = client.post(
+        "/requests",
+        json={"text": "Need a sales dashboard", "source_type": "manual", "analyst_id": "analyst-1"},
+    )
+    request_id = create_response.get_json()["request_id"]
+    client.patch(f"/requests/{request_id}/status", json={"status": "analyzed", "analyst_id": "pm-1"})
+
+    response = client.get(f"/requests/{request_id}")
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["request"]["request_id"] == request_id
+    assert body["request"]["status"] == "analyzed"
+    assert [entry["event"] for entry in body["audit_log"]] == ["request_submitted", "status_updated"]
+    assert body["audit_log"][0]["analyst_id"] == "analyst-1"
+    assert body["audit_log"][1]["analyst_id"] == "pm-1"
+    assert all(entry["timestamp"] for entry in body["audit_log"])
+
+
+def test_get_request_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.get("/requests/does-not-exist")
+
+    assert response.status_code == 404
+    assert response.get_json()["error"] == "request_not_found"
+
+
+def test_get_request_does_not_modify_state_or_add_audit_entries(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    create_response = client.post(
+        "/requests",
+        json={"text": "Need a sales dashboard", "source_type": "manual", "analyst_id": "analyst-1"},
+    )
+    request_id = create_response.get_json()["request_id"]
+
+    first = client.get(f"/requests/{request_id}")
+    second = client.get(f"/requests/{request_id}")
+
+    assert first.status_code == 200
+    assert first.get_json() == second.get_json()
+
+    store = app.config["REQUEST_STORE"]
+    assert store.get_request(request_id)["status"] == "intake"
+    assert [entry.event for entry in store.get_audit_log(request_id)] == ["request_submitted"]
+
+
+def test_update_request_status_updates_a_valid_request(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    create_response = client.post(
+        "/requests",
+        json={"text": "Need a sales dashboard", "source_type": "manual", "analyst_id": "analyst-1"},
+    )
+    request_id = create_response.get_json()["request_id"]
+
+    response = client.patch(
+        f"/requests/{request_id}/status",
+        json={"status": "analyzed", "analyst_id": "pm-1"},
+    )
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["status"] == "analyzed"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert [entry.event for entry in audit_log] == ["request_submitted", "status_updated"]
+    assert audit_log[1].analyst_id == "pm-1"
+
+
+def test_update_request_status_rejects_missing_fields(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    create_response = client.post(
+        "/requests",
+        json={"text": "Need a sales dashboard", "source_type": "manual", "analyst_id": "analyst-1"},
+    )
+    request_id = create_response.get_json()["request_id"]
+
+    response = client.patch(f"/requests/{request_id}/status", json={"analyst_id": "pm-1"})
+
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+
+def test_update_request_status_rejects_invalid_status(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    create_response = client.post(
+        "/requests",
+        json={"text": "Need a sales dashboard", "source_type": "manual", "analyst_id": "analyst-1"},
+    )
+    request_id = create_response.get_json()["request_id"]
+
+    response = client.patch(
+        f"/requests/{request_id}/status",
+        json={"status": "not_a_real_status", "analyst_id": "pm-1"},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "invalid_status"
+
+    store = app.config["REQUEST_STORE"]
+    assert store.get_request(request_id)["status"] == "intake"
+
+
+def test_update_request_status_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.patch(
+        "/requests/does-not-exist/status",
+        json={"status": "completed", "analyst_id": "pm-1"},
+    )
+
+    assert response.status_code == 404
+    assert response.get_json()["error"] == "request_not_found"
+
+
 def test_submit_email_request_analyzes_and_persists_result(tmp_path, monkeypatch):
     monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
     db_path = str(tmp_path / "test.db")

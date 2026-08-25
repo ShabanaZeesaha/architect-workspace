@@ -73,6 +73,46 @@ def create_app(db_path: str | None = None, email_client=None) -> Flask:
         )
         return jsonify({"error": error_category, "request_id": record["request_id"]}), 400
 
+    @app.get("/requests/<request_id>")
+    def get_request_detail(request_id):
+        store: RequestIntake = app.config["REQUEST_STORE"]
+        record = store.get_request(request_id)
+        if record is None:
+            return jsonify({"error": "request_not_found"}), 404
+
+        audit_log = [
+            {
+                "request_id": entry.request_id,
+                "analyst_id": entry.analyst_id,
+                "event": entry.event,
+                "timestamp": entry.timestamp,
+                "error_category": entry.error_category,
+            }
+            for entry in store.get_audit_log(request_id)
+        ]
+        return jsonify({"request": record, "audit_log": audit_log}), 200
+
+    @app.patch("/requests/<request_id>/status")
+    def update_request_status(request_id):
+        payload = request.get_json(silent=True) or {}
+        new_status = payload.get("status")
+        analyst_id = payload.get("analyst_id")
+
+        if not new_status or not analyst_id:
+            return jsonify({"error": "status and analyst_id are required"}), 400
+
+        store: RequestIntake = app.config["REQUEST_STORE"]
+        try:
+            updated = store.update_status(
+                request_id=request_id, analyst_id=analyst_id, new_status=new_status
+            )
+        except ValueError:
+            return jsonify({"error": "invalid_status"}), 400
+        except KeyError:
+            return jsonify({"error": "request_not_found"}), 404
+
+        return jsonify(updated), 200
+
     @app.post("/requests/excel")
     def submit_excel_request():
         analyst_id = request.form.get("analyst_id")

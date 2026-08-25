@@ -1,4 +1,6 @@
-from src.request_intake import RequestIntake
+import pytest
+
+from src.request_intake import InvalidTransitionError, RequestIntake
 
 
 def test_submit_request_records_a_valid_request(tmp_path):
@@ -44,3 +46,97 @@ def test_request_and_audit_data_persist_across_new_instances(tmp_path):
     assert reloaded_audit_log[0].request_id == created["request_id"]
     assert reloaded_audit_log[0].analyst_id == "analyst-1"
     assert reloaded_audit_log[0].event == "request_submitted"
+
+
+def test_update_status_updates_status_and_writes_audit_entry(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="Need a sales dashboard", source_type="email", analyst_id="analyst-1")
+
+    updated = store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="analyzed")
+
+    assert updated["status"] == "analyzed"
+
+    audit_log = store.get_audit_log(created["request_id"])
+    assert [entry.event for entry in audit_log] == ["request_submitted", "status_updated"]
+    status_entry = audit_log[1]
+    assert status_entry.request_id == created["request_id"]
+    assert status_entry.analyst_id == "pm-1"
+    assert status_entry.timestamp
+
+
+def test_update_status_raises_on_unknown_request_id(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+
+    with pytest.raises(KeyError):
+        store.update_status(request_id="does-not-exist", analyst_id="pm-1", new_status="completed")
+
+    assert store.get_audit_log() == []
+
+
+def test_update_status_raises_on_invalid_status(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="Need a sales dashboard", source_type="email", analyst_id="analyst-1")
+
+    with pytest.raises(ValueError):
+        store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="not_a_real_status")
+
+    unchanged = store.get_request(created["request_id"])
+    assert unchanged["status"] == "intake"
+    assert [entry.event for entry in store.get_audit_log(created["request_id"])] == ["request_submitted"]
+
+
+def test_update_status_allows_analysis_failed_to_intake_retry(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="Need a sales dashboard", source_type="email", analyst_id="analyst-1")
+    store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="analysis_failed")
+
+    updated = store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="intake")
+
+    assert updated["status"] == "intake"
+
+
+def test_update_status_allows_analyzed_to_completed(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="Need a sales dashboard", source_type="email", analyst_id="analyst-1")
+    store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="analyzed")
+
+    updated = store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="completed")
+
+    assert updated["status"] == "completed"
+
+
+def test_update_status_blocks_completed_to_intake(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="Need a sales dashboard", source_type="email", analyst_id="analyst-1")
+    store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="analyzed")
+    store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="completed")
+
+    with pytest.raises(InvalidTransitionError):
+        store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="intake")
+
+    unchanged = store.get_request(created["request_id"])
+    assert unchanged["status"] == "completed"
+    events = [entry.event for entry in store.get_audit_log(created["request_id"])]
+    assert events == ["request_submitted", "status_updated", "status_updated"]
+
+
+def test_update_status_blocks_intake_to_completed(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="Need a sales dashboard", source_type="email", analyst_id="analyst-1")
+
+    with pytest.raises(InvalidTransitionError):
+        store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="completed")
+
+    unchanged = store.get_request(created["request_id"])
+    assert unchanged["status"] == "intake"
+    assert [entry.event for entry in store.get_audit_log(created["request_id"])] == ["request_submitted"]
+
+
+def test_update_status_same_status_is_idempotent_no_op(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="Need a sales dashboard", source_type="email", analyst_id="analyst-1")
+
+    result = store.update_status(request_id=created["request_id"], analyst_id="pm-1", new_status="intake")
+
+    assert result == created
+    assert [entry.event for entry in store.get_audit_log(created["request_id"])] == ["request_submitted"]

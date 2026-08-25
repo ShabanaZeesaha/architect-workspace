@@ -99,20 +99,42 @@
       "criteria": [
         {
           "text": "Given a new request, when it is logged, then the system tracks its lifecycle stages.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a request update, when it is processed, then the system updates the status and history.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system maintains an audit trail of status changes.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
+      "files_touched": [
+        "src/app.py",
+        "src/lifecycle.py",
+        "src/request_intake.py",
+        "tests/test_app.py",
+        "tests/test_request_intake.py"
+      ],
+      "tests_added": [
+        "tests/test_request_intake.py::test_update_status_updates_status_and_writes_audit_entry",
+        "tests/test_request_intake.py::test_update_status_raises_on_unknown_request_id",
+        "tests/test_request_intake.py::test_update_status_raises_on_invalid_status",
+        "tests/test_request_intake.py::test_update_status_allows_analysis_failed_to_intake_retry",
+        "tests/test_request_intake.py::test_update_status_allows_analyzed_to_completed",
+        "tests/test_request_intake.py::test_update_status_blocks_completed_to_intake",
+        "tests/test_request_intake.py::test_update_status_blocks_intake_to_completed",
+        "tests/test_request_intake.py::test_update_status_same_status_is_idempotent_no_op",
+        "tests/test_app.py::test_update_request_status_updates_a_valid_request",
+        "tests/test_app.py::test_update_request_status_rejects_missing_fields",
+        "tests/test_app.py::test_update_request_status_rejects_invalid_status",
+        "tests/test_app.py::test_update_request_status_returns_404_for_unknown_request_id",
+        "tests/test_app.py::test_get_request_returns_current_status_and_audit_trail_in_order",
+        "tests/test_app.py::test_get_request_returns_404_for_unknown_request_id",
+        "tests/test_app.py::test_get_request_does_not_modify_state_or_add_audit_entries"
+      ],
+      "notes": "Adds a lifecycle status field (intake/analyzed/analysis_failed/completed) with an explicit transition map enforcing controlled status changes (illegal moves such as completed->intake are rejected; same-status calls are idempotent no-ops), a PATCH /requests/<id>/status endpoint for updates, a GET /requests/<id> endpoint returning current status plus the full chronological audit trail, and durable SQLite-backed audit entries for every status change.",
       "updated_at": null,
       "verification": {
         "state": "in_progress",
