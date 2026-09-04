@@ -80,3 +80,59 @@
   audit-trail logging (including repeated calls each writing their own
   entry), and the Excel-sourced path exercising the same field schema as
   email. All external API calls remain mocked.
+
+## 2026-09-04 — capture-request prompt v1.0.0: evaluation documented, known limitations accepted
+
+- Built the first prompt-library entry end to end: `prompts/capture-request/v1.0.0.md`
+  (rung 2 — role/task/audience plus format, constraints, and edge-case rules; no XML
+  tags, examples, or scratchpad), `prompts/capture-request/eval.jsonl` (5 confirmed
+  test cases — 4 ordinary, 1 deliberately awkward), and a scoring harness
+  (`docs/Assignment_1/scripts/score_prompt.py`) that fills each case into the prompt,
+  calls Claude, extracts JSON from the reply, and grades only the fields named in
+  `expected`.
+- Fixed a real bug in the harness along the way: `ask_claude` called
+  `response.content[0].text` unconditionally; on `claude-sonnet-5` with adaptive
+  thinking on by default, `content[0]` can be a `ThinkingBlock`, which has no `.text`,
+  crashing every run. Now collects only `type == "text"` blocks.
+- Latest scored run: **0/5 (strict — every field in `expected` must match exactly)**.
+- What actually improved across two prompt revisions: `status`, `metrics`,
+  `dimensions`, `filters`, `priority`, and `source_system` now match the expected
+  value exactly in 4 of 5 cases; the deliberately awkward case (case 5) matches on
+  6 of 7 fields, including correctly distinguishing `needs_clarification` from
+  `not_a_request`, and correct `null`-vs-`[]` typing on fields it can't determine.
+- Remaining failures, by cause:
+  - **Prompt-fixable:** case 2's `metrics` returns `"Employee headcount"` instead of
+    `"Headcount"` — the same class of naming-padding issue the `source_system`
+    normalization rule already fixed for a different field.
+  - **Ground-truth inconsistency, not a prompt gap:** `business_question` fails in
+    4 of 5 cases. Case 1's expected answer abstracts away the specific breakdown
+    ("...over time"); cases 3 and 4's expected answers keep it ("...by cost center",
+    "...by priority level"). No single prompt rule can produce both conventions.
+  - **Scorer-strictness limit, not a prompt gap:** the `business_question` failures
+    are also structural — this harness does plain case/whitespace-insensitive string
+    equality on text fields, with no tolerance for a correct paraphrase. Case 5's
+    `clarification_needed` fails the same way: correct content, wrong exact wording
+    and count against one fixed human-written list, since list comparison here
+    requires exact equality rather than order/content-insensitive matching.
+- Why we stopped instead of moving to rung 3/4/5: rung 3 (XML tags) addresses
+  input/instruction confusion, not paraphrase variance. Rung 4 (examples) would
+  anchor the model to one `business_question` convention, fixing some cases while
+  breaking others, since the ground truth itself uses two conventions. Rung 5
+  (decomposition) targets reasoning depth on hard problems — the model already
+  extracts the correct underlying facts (proof: 6 of 7 fields are correct in 4-5 of
+  5 cases); the gap is free-text wording determinism, which more reasoning doesn't fix.
+- Recommended future improvements (not applied in this pass — `eval.jsonl` and
+  `score_prompt.py` were explicitly out of scope): (1) apply the metrics-naming
+  tightening rule above; (2) resolve the case-1-vs-3/4 `business_question`
+  convention with a reviewer, and update either the prompt rule or the expected
+  answers so they're internally consistent; (3) if a hard 5/5 gate is needed later,
+  that requires loosening the scorer's text-field comparison (e.g. reusing the
+  order/case-insensitive list matching already implemented in the other
+  `score_prompt.py` copy at the repo root) or a fuzzier grading method for free-text
+  fields — not a prompt change.
+- Status: `prompts/capture-request/v1.0.0.md` remains `status: draft`. Mentor
+  confirmed 5/5 is not required; goal was documented evaluation and learning, which
+  this entry satisfies.
+- Verification: `python scripts/score_prompt.py prompts/capture-request/v1.0.0.md
+  prompts/capture-request/eval.jsonl`, run from `docs/Assignment_1`, 2026-09-03/09-04.
+  No changes made to `eval.jsonl` or either `score_prompt.py` copy.
