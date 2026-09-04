@@ -136,3 +136,32 @@
 - Verification: `python scripts/score_prompt.py prompts/capture-request/v1.0.0.md
   prompts/capture-request/eval.jsonl`, run from `docs/Assignment_1`, 2026-09-03/09-04.
   No changes made to `eval.jsonl` or either `score_prompt.py` copy.
+
+## 2026-09-04 — STORY-005: Design recommendation generation (REQ-005, REQ-011)
+- Added `src/design_recommendation.py`: `generate_design_recommendations()`
+  calls the configured Claude Haiku model to recommend a data model,
+  relationships, transformations, validation checks, KPI definitions, DAX
+  measures, report pages, slicers, and visual design from an
+  already-approved request's requirements and (optional) field mapping.
+  Missing-field detection runs first and is deterministic — reuses
+  `requirement_clarification.find_missing_fields()` — so an incomplete
+  requirement is flagged and the model is never called on data it doesn't
+  have.
+- Wired this into a new `POST /requests/<id>/design-recommendations`
+  endpoint (`src/design_recommendation_routes.py`), registered from
+  `src/app.py` with an injectable client mirroring the existing
+  `email_client` pattern. Every outcome — missing data, recommendations
+  generated, or the model failing/returning garbage — writes one audit
+  entry (`design_recommendations_missing_data`,
+  `design_recommendations_generated`, or `design_recommendations_failed`),
+  so recommendations are always traceable for human review, never
+  auto-approved.
+- Extracted `src/requirement_clarification_routes.py` out of `app.py`
+  (behavior unchanged) because `app.py` was already at this repo's
+  200-line cap before this story's route could be added — same split
+  rationale as STORY-004's `field_mapping_routes.py`.
+- Verification: 91 automated tests passing (`pytest tests/`), up from 83 —
+  8 new route tests (happy path, field-mapping passthrough, missing-data
+  flag with no model call, 404/400 paths, invalid model response,
+  simulated API failure) and 7 new unit tests for the core module. All
+  external API calls remain mocked.
