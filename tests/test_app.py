@@ -33,6 +33,19 @@ def _workbook_with_headers(headers: list) -> Workbook:
     return workbook
 
 
+_VALID_DESIGN_RECOMMENDATION_REPLY = """{
+    "data_model": ["Sales fact table", "Region dimension table"],
+    "relationships": ["Sales.RegionID -> Region.RegionID"],
+    "transformations": ["Aggregate sales by region and quarter"],
+    "validation_checks": ["Sales amounts are non-negative"],
+    "kpi_definitions": ["Total Revenue = SUM(Sales[Amount])"],
+    "dax_measures": ["Total Revenue := SUM(Sales[Amount])"],
+    "report_pages": ["Regional Sales Overview"],
+    "slicers": ["Region", "Quarter"],
+    "visual_design": ["Bar chart comparing revenue by region"]
+}"""
+
+
 def _mock_email_client(reply_text: str = _VALID_EMAIL_REPLY) -> Mock:
     response = SimpleNamespace(content=[SimpleNamespace(type="text", text=reply_text)])
     client = Mock()
@@ -40,8 +53,19 @@ def _mock_email_client(reply_text: str = _VALID_EMAIL_REPLY) -> Mock:
     return client
 
 
-def _new_app(tmp_path, email_client=None):
-    return create_app(db_path=str(tmp_path / "test.db"), email_client=email_client)
+def _mock_design_recommendation_client(reply_text: str = _VALID_DESIGN_RECOMMENDATION_REPLY) -> Mock:
+    response = SimpleNamespace(content=[SimpleNamespace(type="text", text=reply_text)])
+    client = Mock()
+    client.messages.create.return_value = response
+    return client
+
+
+def _new_app(tmp_path, email_client=None, design_recommendation_client=None):
+    return create_app(
+        db_path=str(tmp_path / "test.db"),
+        email_client=email_client,
+        design_recommendation_client=design_recommendation_client,
+    )
 
 
 def test_health_returns_ok(tmp_path):
@@ -656,3 +680,180 @@ def test_submit_field_mapping_request_marks_corrupt_workbook_as_failed_without_l
         serialized = f"{entry.request_id}|{entry.analyst_id}|{entry.event}|{entry.timestamp}|{entry.error_category}"
         assert corrupt_bytes.decode() not in serialized
         assert os.sep not in serialized
+
+
+def test_submit_design_recommendation_request_generates_recommendations_for_a_complete_analysis(tmp_path):
+    email_client = _mock_email_client()
+    design_client = _mock_design_recommendation_client()
+    app = _new_app(tmp_path, email_client=email_client, design_recommendation_client=design_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/design-recommendations", json={"analyst_id": "pm-1"}
+    )
+
+    assert response.status_code == 201
+    body = response.get_json()
+    assert body["request_id"] == request_id
+    recommendations = body["recommendations"]
+    for field in (
+        "data_model",
+        "relationships",
+        "transformations",
+        "validation_checks",
+        "kpi_definitions",
+        "dax_measures",
+        "report_pages",
+        "slicers",
+        "visual_design",
+    ):
+        assert field in recommendations
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert [entry.event for entry in audit_log] == [
+        "request_submitted",
+        "analysis_completed",
+        "design_recommendations_generated",
+    ]
+    assert audit_log[-1].analyst_id == "pm-1"
+
+
+def test_submit_design_recommendation_request_passes_field_mapping_into_the_prompt(tmp_path):
+    email_client = _mock_email_client()
+    design_client = _mock_design_recommendation_client()
+    app = _new_app(tmp_path, email_client=email_client, design_recommendation_client=design_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    client.post(
+        f"/requests/{request_id}/design-recommendations",
+        json={"analyst_id": "pm-1", "field_mapping": {"Total Revenue": "kpis"}},
+    )
+
+    _, kwargs = design_client.messages.create.call_args
+    prompt_sent = kwargs["messages"][0]["content"]
+    assert "Total Revenue" in prompt_sent
+
+
+def test_submit_design_recommendation_request_flags_missing_information_without_calling_model(tmp_path):
+    incomplete_reply = """{
+        "business_objectives": ["Increase visibility into quarterly regional sales"],
+        "scope": ["Q1 2026 regional sales"],
+        "kpis": [],
+        "filters": [],
+        "calculations": ["Net Margin = Revenue - Cost"],
+        "visual_requirements": ["Bar chart comparing revenue by region"],
+        "reporting_expectations": ["Weekly summary email"]
+    }"""
+    email_client = _mock_email_client(reply_text=incomplete_reply)
+    design_client = _mock_design_recommendation_client()
+    app = _new_app(tmp_path, email_client=email_client, design_recommendation_client=design_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/design-recommendations", json={"analyst_id": "pm-1"}
+    )
+
+    assert response.status_code == 400
+    body = response.get_json()
+    assert body["error"] == "incomplete_requirements"
+    assert body["missing_fields"] == ["kpis", "filters"]
+    design_client.messages.create.assert_not_called()
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert [entry.event for entry in audit_log] == [
+        "request_submitted",
+        "analysis_completed",
+        "design_recommendations_missing_data",
+    ]
+    assert audit_log[-1].error_category == "kpis,filters"
+
+
+def test_submit_design_recommendation_request_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post(
+        "/requests/does-not-exist/design-recommendations", json={"analyst_id": "pm-1"}
+    )
+
+    assert response.status_code == 404
+    assert response.get_json()["error"] == "request_not_found"
+
+
+def test_submit_design_recommendation_request_returns_400_when_analysis_not_available_yet(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    create_response = client.post(
+        "/requests",
+        json={"text": "Need a sales dashboard", "source_type": "manual", "analyst_id": "analyst-1"},
+    )
+    request_id = create_response.get_json()["request_id"]
+
+    response = client.post(
+        f"/requests/{request_id}/design-recommendations", json={"analyst_id": "pm-1"}
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "no_analysis_available"
+
+    store = app.config["REQUEST_STORE"]
+    assert [entry.event for entry in store.get_audit_log(request_id)] == ["request_submitted"]
+
+
+def test_submit_design_recommendation_request_rejects_missing_analyst_id(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(f"/requests/{request_id}/design-recommendations", json={})
+
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+
+def test_submit_design_recommendation_request_marks_invalid_model_response_as_failed(tmp_path):
+    email_client = _mock_email_client()
+    design_client = _mock_design_recommendation_client(reply_text="this is not json")
+    app = _new_app(tmp_path, email_client=email_client, design_recommendation_client=design_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/design-recommendations", json={"analyst_id": "pm-1"}
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "invalid_model_response"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert audit_log[-1].event == "design_recommendations_failed"
+    assert audit_log[-1].error_category == "invalid_model_response"
+
+
+def test_submit_design_recommendation_request_marks_unavailable_model_as_failed(tmp_path):
+    email_client = _mock_email_client()
+    design_client = Mock()
+    api_request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    design_client.messages.create.side_effect = anthropic.APIConnectionError(request=api_request)
+    app = _new_app(tmp_path, email_client=email_client, design_recommendation_client=design_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/design-recommendations", json={"analyst_id": "pm-1"}
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "design_recommendation_unavailable"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert audit_log[-1].event == "design_recommendations_failed"
+    assert audit_log[-1].error_category == "design_recommendation_unavailable"

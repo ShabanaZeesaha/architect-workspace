@@ -3,6 +3,7 @@ import tempfile
 
 from flask import Flask, jsonify, request
 
+from src.design_recommendation_routes import register_design_recommendation_routes
 from src.email_analysis import (
     EmailAnalysisError,
     InvalidEmailAnalysisResponseError,
@@ -15,12 +16,7 @@ from src.excel_analysis import (
 )
 from src.field_mapping_routes import register_field_mapping_routes
 from src.request_intake import RequestIntake
-from src.requirement_clarification import (
-    CLARIFICATION_NOT_NEEDED,
-    CLARIFICATION_QUESTIONS_GENERATED,
-    RequirementClarificationError,
-    generate_followup_questions,
-)
+from src.requirement_clarification_routes import register_requirement_clarification_routes
 
 _ANALYSIS_FAILURE_CATEGORIES = {
     CorruptExcelFileError: "corrupt_excel",
@@ -28,7 +24,7 @@ _ANALYSIS_FAILURE_CATEGORIES = {
 }
 
 
-def create_app(db_path: str | None = None, email_client=None) -> Flask:
+def create_app(db_path: str | None = None, email_client=None, design_recommendation_client=None) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     os.makedirs(app.instance_path, exist_ok=True)
 
@@ -37,6 +33,7 @@ def create_app(db_path: str | None = None, email_client=None) -> Flask:
 
     app.config["REQUEST_STORE"] = RequestIntake(db_path)
     app.config["EMAIL_ANALYSIS_CLIENT"] = email_client
+    app.config["DESIGN_RECOMMENDATION_CLIENT"] = design_recommendation_client
 
     @app.get("/health")
     def health():
@@ -164,34 +161,9 @@ def create_app(db_path: str | None = None, email_client=None) -> Flask:
             201,
         )
 
-    @app.post("/requests/<request_id>/clarify")
-    def clarify_request(request_id):
-        payload = request.get_json(silent=True) or {}
-        analyst_id = payload.get("analyst_id")
-
-        if not analyst_id:
-            return jsonify({"error": "analyst_id is required"}), 400
-
-        store: RequestIntake = app.config["REQUEST_STORE"]
-        record = store.get_request(request_id)
-        if record is None:
-            return jsonify({"error": "request_not_found"}), 404
-
-        analysis = record.get("analysis")
-        if analysis is None:
-            return jsonify({"error": "no_analysis_available"}), 400
-
-        try:
-            questions = generate_followup_questions(analysis)
-        except RequirementClarificationError:
-            return jsonify({"error": "invalid_analysis"}), 400
-
-        event = CLARIFICATION_QUESTIONS_GENERATED if questions else CLARIFICATION_NOT_NEEDED
-        store.record_clarification(request_id=request_id, analyst_id=analyst_id, event=event)
-
-        return jsonify({"request_id": request_id, "questions": questions}), 200
-
     register_field_mapping_routes(app)
+    register_requirement_clarification_routes(app)
+    register_design_recommendation_routes(app)
 
     return app
 
