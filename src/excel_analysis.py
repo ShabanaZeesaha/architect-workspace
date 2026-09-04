@@ -6,7 +6,7 @@ from openpyxl.utils.exceptions import InvalidFileException
 _SUPPORTED_EXTENSIONS = (".xlsx", ".xlsm")
 
 _LABEL_KEYWORDS = {
-    "objectives": ("objective", "goal"),
+    "business_objectives": ("objective", "goal"),
     "scope": ("scope",),
     "kpis": ("kpi", "metric"),
     "filters": ("filter",),

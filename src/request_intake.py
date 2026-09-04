@@ -2,9 +2,9 @@ import json
 import os
 import sqlite3
 import uuid
-from dataclasses import dataclass
 from datetime import datetime, timezone
 
+from src.audit_trail import AuditEntry, AuditTrail
 from src.lifecycle import INITIAL_STATUS, TRANSITIONS, VALID_STATUSES, InvalidTransitionError
 
 __all__ = ["AuditEntry", "InvalidTransitionError", "RequestIntake"]
@@ -19,28 +19,12 @@ CREATE TABLE IF NOT EXISTS requests (
     status TEXT NOT NULL,
     analysis TEXT
 );
-CREATE TABLE IF NOT EXISTS audit_log (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    request_id TEXT NOT NULL,
-    analyst_id TEXT NOT NULL,
-    event TEXT NOT NULL,
-    timestamp TEXT NOT NULL,
-    error_category TEXT
-);
 """
 
 
-@dataclass
-class AuditEntry:
-    request_id: str
-    analyst_id: str
-    event: str
-    timestamp: str
-    error_category: str | None = None
-
-
 class RequestIntake:
-    """SQLite-backed store for submitted requests and their audit trail."""
+    """SQLite-backed store for submitted requests, with a shared AuditTrail
+    for their audit history."""
 
     def __init__(self, db_path: str) -> None:
         self.db_path = db_path
@@ -48,10 +32,13 @@ class RequestIntake:
         if directory:
             os.makedirs(directory, exist_ok=True)
 
+        self._audit = AuditTrail(db_path)
+
         conn = self._connect()
         try:
             with conn:
                 conn.executescript(_SCHEMA)
+                self._audit.ensure_schema(conn)
         finally:
             conn.close()
 
@@ -73,11 +60,7 @@ class RequestIntake:
                     "VALUES (?, ?, ?, ?, ?, ?)",
                     (request_id, text, source_type, analyst_id, timestamp, INITIAL_STATUS),
                 )
-                conn.execute(
-                    "INSERT INTO audit_log (request_id, analyst_id, event, timestamp) "
-                    "VALUES (?, ?, ?, ?)",
-                    (request_id, analyst_id, "request_submitted", timestamp),
-                )
+                self._audit.append(conn, request_id, analyst_id, "request_submitted", timestamp)
         finally:
             conn.close()
         return self.get_request(request_id)
@@ -105,11 +88,7 @@ class RequestIntake:
                 )
                 if cursor.rowcount == 0:
                     raise KeyError(f"Unknown request_id: {request_id}")
-                conn.execute(
-                    "INSERT INTO audit_log (request_id, analyst_id, event, timestamp) "
-                    "VALUES (?, ?, ?, ?)",
-                    (request_id, analyst_id, "analysis_completed", timestamp),
-                )
+                self._audit.append(conn, request_id, analyst_id, "analysis_completed", timestamp)
         finally:
             conn.close()
         return self.get_request(request_id)
@@ -126,11 +105,8 @@ class RequestIntake:
                 )
                 if cursor.rowcount == 0:
                     raise KeyError(f"Unknown request_id: {request_id}")
-                conn.execute(
-                    "INSERT INTO audit_log "
-                    "(request_id, analyst_id, event, timestamp, error_category) "
-                    "VALUES (?, ?, ?, ?, ?)",
-                    (request_id, analyst_id, "analysis_failed", timestamp, error_category),
+                self._audit.append(
+                    conn, request_id, analyst_id, "analysis_failed", timestamp, error_category
                 )
         finally:
             conn.close()
@@ -164,37 +140,33 @@ class RequestIntake:
                     "UPDATE requests SET status = ? WHERE request_id = ?",
                     (new_status, request_id),
                 )
-                conn.execute(
-                    "INSERT INTO audit_log (request_id, analyst_id, event, timestamp) "
-                    "VALUES (?, ?, ?, ?)",
-                    (request_id, analyst_id, "status_updated", timestamp),
-                )
+                self._audit.append(conn, request_id, analyst_id, "status_updated", timestamp)
+        finally:
+            conn.close()
+        return self.get_request(request_id)
+
+    def record_clarification(self, request_id: str, analyst_id: str, event: str) -> dict:
+        """Appends a requirement-clarification interaction to the audit
+        trail. Does not change the request's lifecycle status -- generating
+        or reviewing follow-up questions is not itself a status transition.
+        """
+        timestamp = datetime.now(timezone.utc).isoformat()
+
+        conn = self._connect()
+        try:
+            with conn:
+                row = conn.execute(
+                    "SELECT request_id FROM requests WHERE request_id = ?", (request_id,)
+                ).fetchone()
+                if row is None:
+                    raise KeyError(f"Unknown request_id: {request_id}")
+                self._audit.append(conn, request_id, analyst_id, event, timestamp)
         finally:
             conn.close()
         return self.get_request(request_id)
 
     def get_audit_log(self, request_id: str | None = None) -> list[AuditEntry]:
-        conn = self._connect()
-        try:
-            if request_id is None:
-                rows = conn.execute("SELECT * FROM audit_log ORDER BY id ASC").fetchall()
-            else:
-                rows = conn.execute(
-                    "SELECT * FROM audit_log WHERE request_id = ? ORDER BY id ASC",
-                    (request_id,),
-                ).fetchall()
-        finally:
-            conn.close()
-        return [
-            AuditEntry(
-                request_id=row["request_id"],
-                analyst_id=row["analyst_id"],
-                event=row["event"],
-                timestamp=row["timestamp"],
-                error_category=row["error_category"],
-            )
-            for row in rows
-        ]
+        return self._audit.get(request_id)
 
     @staticmethod
     def _row_to_request(row: sqlite3.Row) -> dict:

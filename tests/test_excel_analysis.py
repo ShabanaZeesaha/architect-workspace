@@ -31,7 +31,7 @@ def test_analyze_report_extracts_content_from_labeled_and_tabular_sheets(tmp_pat
     assert "Notes" in result["scope"]
     assert "Data" in result["scope"]
     assert "Q1 2026 regional sales data across all product lines" in result["scope"]
-    assert "Increase visibility into quarterly regional sales performance" in result["objectives"]
+    assert "Increase visibility into quarterly regional sales performance" in result["business_objectives"]
     assert "Total Revenue" in result["kpis"]
     assert "Revenue" in result["kpis"]
     assert "Region" in result["filters"]

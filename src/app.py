@@ -14,6 +14,12 @@ from src.excel_analysis import (
     analyze_report,
 )
 from src.request_intake import RequestIntake
+from src.requirement_clarification import (
+    CLARIFICATION_NOT_NEEDED,
+    CLARIFICATION_QUESTIONS_GENERATED,
+    RequirementClarificationError,
+    generate_followup_questions,
+)
 
 _ANALYSIS_FAILURE_CATEGORIES = {
     CorruptExcelFileError: "corrupt_excel",
@@ -156,6 +162,33 @@ def create_app(db_path: str | None = None, email_client=None) -> Flask:
             ),
             201,
         )
+
+    @app.post("/requests/<request_id>/clarify")
+    def clarify_request(request_id):
+        payload = request.get_json(silent=True) or {}
+        analyst_id = payload.get("analyst_id")
+
+        if not analyst_id:
+            return jsonify({"error": "analyst_id is required"}), 400
+
+        store: RequestIntake = app.config["REQUEST_STORE"]
+        record = store.get_request(request_id)
+        if record is None:
+            return jsonify({"error": "request_not_found"}), 404
+
+        analysis = record.get("analysis")
+        if analysis is None:
+            return jsonify({"error": "no_analysis_available"}), 400
+
+        try:
+            questions = generate_followup_questions(analysis)
+        except RequirementClarificationError:
+            return jsonify({"error": "invalid_analysis"}), 400
+
+        event = CLARIFICATION_QUESTIONS_GENERATED if questions else CLARIFICATION_NOT_NEEDED
+        store.record_clarification(request_id=request_id, analyst_id=analyst_id, event=event)
+
+        return jsonify({"request_id": request_id, "questions": questions}), 200
 
     return app
 

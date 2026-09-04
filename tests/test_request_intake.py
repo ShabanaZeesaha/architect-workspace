@@ -140,3 +140,44 @@ def test_update_status_same_status_is_idempotent_no_op(tmp_path):
 
     assert result == created
     assert [entry.event for entry in store.get_audit_log(created["request_id"])] == ["request_submitted"]
+
+
+def test_record_clarification_writes_audit_entry_without_changing_status(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="Need a sales dashboard", source_type="email", analyst_id="analyst-1")
+
+    result = store.record_clarification(
+        request_id=created["request_id"], analyst_id="pm-1", event="clarification_questions_generated"
+    )
+
+    assert result["status"] == "intake"
+    audit_log = store.get_audit_log(created["request_id"])
+    assert [entry.event for entry in audit_log] == ["request_submitted", "clarification_questions_generated"]
+    assert audit_log[1].analyst_id == "pm-1"
+    assert audit_log[1].timestamp
+
+
+def test_record_clarification_logs_every_call_including_repeats(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="Need a sales dashboard", source_type="email", analyst_id="analyst-1")
+
+    store.record_clarification(
+        request_id=created["request_id"], analyst_id="pm-1", event="clarification_not_needed"
+    )
+    store.record_clarification(
+        request_id=created["request_id"], analyst_id="pm-1", event="clarification_not_needed"
+    )
+
+    events = [entry.event for entry in store.get_audit_log(created["request_id"])]
+    assert events == ["request_submitted", "clarification_not_needed", "clarification_not_needed"]
+
+
+def test_record_clarification_raises_on_unknown_request_id(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+
+    with pytest.raises(KeyError):
+        store.record_clarification(
+            request_id="does-not-exist", analyst_id="pm-1", event="clarification_not_needed"
+        )
+
+    assert store.get_audit_log() == []

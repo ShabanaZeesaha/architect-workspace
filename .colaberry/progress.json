@@ -159,20 +159,54 @@
       "criteria": [
         {
           "text": "Given an unclear requirement, when it is detected, then the system generates follow-up questions.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a complete requirement, when it is reviewed, then no follow-up questions are generated.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs all clarification interactions in the audit trail.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
+      "files_touched": [
+        "src/app.py",
+        "src/audit_trail.py",
+        "src/excel_analysis.py",
+        "src/request_intake.py",
+        "src/requirement_clarification.py",
+        "tests/test_app.py",
+        "tests/test_audit_trail.py",
+        "tests/test_excel_analysis.py",
+        "tests/test_request_intake.py",
+        "tests/test_requirement_clarification.py"
+      ],
+      "tests_added": [
+        "tests/test_requirement_clarification.py::test_find_missing_fields_returns_empty_list_for_a_complete_analysis",
+        "tests/test_requirement_clarification.py::test_find_missing_fields_returns_the_names_of_empty_fields",
+        "tests/test_requirement_clarification.py::test_find_missing_fields_raises_for_non_dict_input",
+        "tests/test_requirement_clarification.py::test_find_missing_fields_raises_when_a_required_field_is_absent",
+        "tests/test_requirement_clarification.py::test_find_missing_fields_raises_when_a_field_is_not_a_list",
+        "tests/test_requirement_clarification.py::test_generate_followup_questions_returns_empty_list_for_a_complete_requirement",
+        "tests/test_requirement_clarification.py::test_generate_followup_questions_returns_one_question_per_missing_field",
+        "tests/test_requirement_clarification.py::test_generate_followup_questions_are_non_empty_strings",
+        "tests/test_audit_trail.py::test_append_and_get_round_trip_an_entry",
+        "tests/test_audit_trail.py::test_get_filters_by_request_id",
+        "tests/test_audit_trail.py::test_get_with_no_request_id_returns_all_entries_in_order",
+        "tests/test_audit_trail.py::test_append_stores_error_category_when_given",
+        "tests/test_request_intake.py::test_record_clarification_writes_audit_entry_without_changing_status",
+        "tests/test_request_intake.py::test_record_clarification_logs_every_call_including_repeats",
+        "tests/test_request_intake.py::test_record_clarification_raises_on_unknown_request_id",
+        "tests/test_app.py::test_clarify_request_generates_questions_for_an_incomplete_analysis",
+        "tests/test_app.py::test_clarify_request_generates_no_questions_for_a_complete_analysis",
+        "tests/test_app.py::test_clarify_request_logs_every_interaction_even_when_called_repeatedly",
+        "tests/test_app.py::test_clarify_request_returns_404_for_unknown_request_id",
+        "tests/test_app.py::test_clarify_request_returns_400_when_analysis_not_available_yet",
+        "tests/test_app.py::test_clarify_request_rejects_missing_analyst_id",
+        "tests/test_app.py::test_clarify_excel_request_generates_no_questions_when_workbook_states_everything"
+      ],
+      "notes": "Adds deterministic missing-field detection (src/requirement_clarification.py) over the seven fields analyze_email()/analyze_report() already extract, a POST /requests/<id>/clarify endpoint that returns one follow-up question per missing field (empty list when complete), and an audit entry for every clarification call via a new RequestIntake.record_clarification(). Split the audit log out of request_intake.py into src/audit_trail.py because request_intake.py was already over this repo's 200-line file cap before this change. Also fixed a pre-existing key mismatch in src/excel_analysis.py ('objectives' vs 'business_objectives') that would have broken clarification for Excel-sourced requests.",
       "updated_at": null,
       "verification": {
         "state": "in_progress",

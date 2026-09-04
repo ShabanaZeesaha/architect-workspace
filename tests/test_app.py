@@ -397,3 +397,148 @@ def test_submit_excel_request_marks_corrupt_workbook_as_failed_without_leaking_c
         assert corrupt_bytes.decode() not in serialized
         assert "report.xlsx" not in serialized
         assert os.sep not in serialized
+
+
+def _submit_and_analyze_email_request(client, email_client_reply=_VALID_EMAIL_REPLY, text="Need a sales dashboard"):
+    response = client.post(
+        "/requests",
+        json={"text": text, "source_type": "email", "analyst_id": "analyst-1"},
+    )
+    return response.get_json()["request_id"]
+
+
+def test_clarify_request_generates_questions_for_an_incomplete_analysis(tmp_path):
+    incomplete_reply = """{
+        "business_objectives": ["Increase visibility into quarterly regional sales"],
+        "scope": ["Q1 2026 regional sales"],
+        "kpis": [],
+        "filters": [],
+        "calculations": ["Net Margin = Revenue - Cost"],
+        "visual_requirements": ["Bar chart comparing revenue by region"],
+        "reporting_expectations": ["Weekly summary email"]
+    }"""
+    email_client = _mock_email_client(reply_text=incomplete_reply)
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(f"/requests/{request_id}/clarify", json={"analyst_id": "pm-1"})
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["request_id"] == request_id
+    assert len(body["questions"]) == 2
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert [entry.event for entry in audit_log] == [
+        "request_submitted",
+        "analysis_completed",
+        "clarification_questions_generated",
+    ]
+    assert audit_log[-1].analyst_id == "pm-1"
+
+
+def test_clarify_request_generates_no_questions_for_a_complete_analysis(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(f"/requests/{request_id}/clarify", json={"analyst_id": "pm-1"})
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["questions"] == []
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert [entry.event for entry in audit_log] == [
+        "request_submitted",
+        "analysis_completed",
+        "clarification_not_needed",
+    ]
+
+
+def test_clarify_request_logs_every_interaction_even_when_called_repeatedly(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    client.post(f"/requests/{request_id}/clarify", json={"analyst_id": "pm-1"})
+    client.post(f"/requests/{request_id}/clarify", json={"analyst_id": "pm-1"})
+
+    store = app.config["REQUEST_STORE"]
+    events = [entry.event for entry in store.get_audit_log(request_id)]
+    assert events == [
+        "request_submitted",
+        "analysis_completed",
+        "clarification_not_needed",
+        "clarification_not_needed",
+    ]
+
+
+def test_clarify_request_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post("/requests/does-not-exist/clarify", json={"analyst_id": "pm-1"})
+
+    assert response.status_code == 404
+    assert response.get_json()["error"] == "request_not_found"
+
+
+def test_clarify_request_returns_400_when_analysis_not_available_yet(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    create_response = client.post(
+        "/requests",
+        json={"text": "Need a sales dashboard", "source_type": "manual", "analyst_id": "analyst-1"},
+    )
+    request_id = create_response.get_json()["request_id"]
+
+    response = client.post(f"/requests/{request_id}/clarify", json={"analyst_id": "pm-1"})
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "no_analysis_available"
+
+    store = app.config["REQUEST_STORE"]
+    assert [entry.event for entry in store.get_audit_log(request_id)] == ["request_submitted"]
+
+
+def test_clarify_request_rejects_missing_analyst_id(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(f"/requests/{request_id}/clarify", json={})
+
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+
+def test_clarify_excel_request_generates_no_questions_when_workbook_states_everything(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    submit_response = client.post(
+        "/requests/excel",
+        data={
+            "analyst_id": "analyst-1",
+            "file": (io.BytesIO(_sample_xlsx_bytes()), "report.xlsx"),
+        },
+    )
+    request_id = submit_response.get_json()["request_id"]
+
+    response = client.post(f"/requests/{request_id}/clarify", json={"analyst_id": "pm-1"})
+
+    assert response.status_code == 200
+    # An empty workbook states nothing except its (auto-named) sheet title,
+    # which analyze_report records as "scope" -- so every other field is
+    # legitimately missing. This proves the excel path shares the same
+    # field schema as the email path (see src/excel_analysis.py's
+    # business_objectives key) rather than raising invalid_analysis.
+    questions = response.get_json()["questions"]
+    assert len(questions) == 6
+    assert any("business objective" in q for q in questions)
