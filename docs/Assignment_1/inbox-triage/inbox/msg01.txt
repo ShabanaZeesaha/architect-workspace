@@ -1,0 +1,11 @@
+From: Priya Anand <priya.anand@halcyonoutfitters.com>
+Subject: URGENT: checkout is completely down, we're losing sales right now
+
+Hi team,
+
+Our checkout has been throwing a 500 error for the last 40 minutes and none of our customers can complete an order. We've already had at least a dozen abandoned carts that I know of, and it's only getting worse as we get closer to lunch traffic.
+
+Can someone get on a call with us immediately? This is costing us real money every minute it's down, and I need to know if this is a problem on your end or ours.
+
+Priya
+Operations Director, Halcyon Outfitters

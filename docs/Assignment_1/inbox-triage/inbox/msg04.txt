@@ -1,0 +1,8 @@
+From: Tom Whitfield <tom.whitfield@solsticeretail.com>
+Subject: URGENT!! Regional numbers look completely wrong
+
+Just pulled up the regional sales dashboard and the EU numbers are showing almost 20% lower than what I had in my notes from last week. Wanted to flag this right away in case something's broken.
+
+Actually, thinking about it more, this might just be the currency conversion catching up again like it did last quarter - I remember Priya mentioning that throws things off for a day or two around the same time each month. Can someone just confirm that's what's happening here before I panic the rest of the team? No rush if that's all it is.
+
+Tom

@@ -1,0 +1,6 @@
+From: Monica Reyes <monica.reyes@solsticeretail.com>
+Subject: Payroll didn't run this morning
+
+Hi, this morning's payroll batch failed and about 140 employees have not been paid yet. I'm already getting messages from a few people in the warehouse asking where their paycheck is. Today is payday, so we have a very small window to fix this and get funds moving before the bank's cutoff this afternoon. Can someone from IT or finance ops call me as soon as they see this? I don't want to wait for a ticket queue on this one.
+
+Monica
