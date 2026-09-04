@@ -181,3 +181,18 @@ def test_record_clarification_raises_on_unknown_request_id(tmp_path):
         )
 
     assert store.get_audit_log() == []
+
+
+def test_record_clarification_stores_error_category_when_given(tmp_path):
+    store = RequestIntake(str(tmp_path / "requests.db"))
+    created = store.submit_request(text="report.xlsx", source_type="excel", analyst_id="analyst-1")
+
+    store.record_clarification(
+        request_id=created["request_id"],
+        analyst_id="analyst-1",
+        event="field_mapping_failed",
+        error_category="corrupt_report",
+    )
+
+    audit_log = store.get_audit_log(created["request_id"])
+    assert audit_log[1].error_category == "corrupt_report"

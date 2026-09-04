@@ -13,6 +13,7 @@ from src.excel_analysis import (
     UnsupportedExcelFormatError,
     analyze_report,
 )
+from src.field_mapping_routes import register_field_mapping_routes
 from src.request_intake import RequestIntake
 from src.requirement_clarification import (
     CLARIFICATION_NOT_NEEDED,
@@ -189,6 +190,8 @@ def create_app(db_path: str | None = None, email_client=None) -> Flask:
         store.record_clarification(request_id=request_id, analyst_id=analyst_id, event=event)
 
         return jsonify({"request_id": request_id, "questions": questions}), 200
+
+    register_field_mapping_routes(app)
 
     return app
 

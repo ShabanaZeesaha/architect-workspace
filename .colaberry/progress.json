@@ -231,21 +231,48 @@
       "criteria": [
         {
           "text": "Given an Excel report, when it is uploaded, then the system maps fields to approved tables.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a field with no mapping, when it is processed, then the system flags it for review.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs all mapping actions in the audit trail.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "src/field_mapping.py",
+        "src/field_mapping_routes.py",
+        "src/app.py",
+        "src/request_intake.py",
+        "tests/test_field_mapping.py",
+        "tests/test_app.py",
+        "tests/test_request_intake.py"
+      ],
+      "tests_added": [
+        "tests/test_field_mapping.py::test_map_fields_matches_exact_approved_column_names",
+        "tests/test_field_mapping.py::test_map_fields_matches_known_synonyms_case_and_whitespace_insensitively",
+        "tests/test_field_mapping.py::test_map_fields_flags_unrecognized_header_as_unmapped",
+        "tests/test_field_mapping.py::test_map_fields_with_no_headers_returns_empty_mapping",
+        "tests/test_field_mapping.py::test_read_report_headers_returns_first_row_of_a_csv",
+        "tests/test_field_mapping.py::test_read_report_headers_returns_first_row_of_an_xlsx_workbook",
+        "tests/test_field_mapping.py::test_read_report_headers_rejects_unsupported_extension",
+        "tests/test_field_mapping.py::test_read_report_headers_raises_on_corrupt_xlsx",
+        "tests/test_field_mapping.py::test_read_report_headers_raises_on_empty_xlsx",
+        "tests/test_field_mapping.py::test_read_report_headers_raises_on_empty_csv",
+        "tests/test_field_mapping.py::test_main_prints_mapped_and_flagged_fields_for_a_valid_report",
+        "tests/test_field_mapping.py::test_main_returns_nonzero_and_prints_error_for_a_bad_report",
+        "tests/test_app.py::test_submit_field_mapping_request_maps_a_valid_workbook",
+        "tests/test_app.py::test_submit_field_mapping_request_flags_an_unmapped_header_for_review",
+        "tests/test_app.py::test_submit_field_mapping_request_rejects_missing_file",
+        "tests/test_app.py::test_submit_field_mapping_request_rejects_unsupported_file_type",
+        "tests/test_app.py::test_submit_field_mapping_request_marks_corrupt_workbook_as_failed_without_leaking_content",
+        "tests/test_request_intake.py::test_record_clarification_stores_error_category_when_given"
+      ],
+      "notes": "Maps uploaded report headers (.xlsx/.xlsm via openpyxl, plus .csv) to this repo's one existing approved schema -- REQUIRED_FIELDS from src/email_analysis.py (business_objectives, scope, kpis, filters, calculations, visual_requirements, reporting_expectations), the same fields excel_analysis.py and requirement_clarification.py already validate against; no richer table/column schema exists yet (that's STORY-005+). Unmatched headers are returned in a 'flagged' list rather than silently dropped, unlike excel_analysis.py's own header scan. New POST /requests/field-mapping endpoint follows the submit_excel_request() pattern (reject bad extension before creating a request; mark analysis_failed-style only for a corrupt/empty file after creation). Routes live in a new src/field_mapping_routes.py rather than inline in app.py, which was already at 197 of this repo's 200-line cap (same reason STORY-003 split audit_trail.py out of request_intake.py). Extended RequestIntake.record_clarification() with an optional error_category param (default None, existing callers/tests unchanged) and reused it as-is for field-mapping audit events rather than adding a near-duplicate method, since request_intake.py had only ~17 lines of headroom left. openpyxl was already in requirements.txt from STORY-001. Also includes a `python -m src.field_mapping <path>` CLI entry point for running the mapping directly without the Flask server. Also has a separate, disconnected prototype in docs/Assignment_1/scripts/field_mapping.py from earlier in this session (against an unrelated made-up KB schema) -- superseded by this src/ implementation and not part of this verification.",
+      "updated_at": "2026-09-04T02:39:38Z",
       "verification": {
         "state": "in_progress",
         "criteria_passed": 0,

@@ -27,6 +27,12 @@ def _sample_xlsx_bytes() -> bytes:
     return buffer.getvalue()
 
 
+def _workbook_with_headers(headers: list) -> Workbook:
+    workbook = Workbook()
+    workbook.active.append(headers)
+    return workbook
+
+
 def _mock_email_client(reply_text: str = _VALID_EMAIL_REPLY) -> Mock:
     response = SimpleNamespace(content=[SimpleNamespace(type="text", text=reply_text)])
     client = Mock()
@@ -542,3 +548,111 @@ def test_clarify_excel_request_generates_no_questions_when_workbook_states_every
     questions = response.get_json()["questions"]
     assert len(questions) == 6
     assert any("business objective" in q for q in questions)
+
+
+def test_submit_field_mapping_request_maps_a_valid_workbook(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    workbook_bytes = io.BytesIO()
+    _workbook_with_headers(["Region", "Total Revenue"]).save(workbook_bytes)
+
+    response = client.post(
+        "/requests/field-mapping",
+        data={
+            "analyst_id": "analyst-1",
+            "file": (io.BytesIO(workbook_bytes.getvalue()), "report.xlsx"),
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.get_json()
+    assert body["request_id"]
+    assert body["mapped"] == {"Region": "filters", "Total Revenue": "kpis"}
+    assert body["flagged"] == []
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(body["request_id"])
+    assert [entry.event for entry in audit_log] == ["request_submitted", "field_mapping_completed"]
+    assert audit_log[1].analyst_id == "analyst-1"
+
+
+def test_submit_field_mapping_request_flags_an_unmapped_header_for_review(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    workbook_bytes = io.BytesIO()
+    _workbook_with_headers(["Region", "Employee Shoe Size"]).save(workbook_bytes)
+
+    response = client.post(
+        "/requests/field-mapping",
+        data={
+            "analyst_id": "analyst-1",
+            "file": (io.BytesIO(workbook_bytes.getvalue()), "report.xlsx"),
+        },
+    )
+
+    assert response.status_code == 201
+    body = response.get_json()
+    assert body["mapped"] == {"Region": "filters"}
+    assert body["flagged"] == ["Employee Shoe Size"]
+
+
+def test_submit_field_mapping_request_rejects_missing_file(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post("/requests/field-mapping", data={"analyst_id": "analyst-1"})
+
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+
+def test_submit_field_mapping_request_rejects_unsupported_file_type(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post(
+        "/requests/field-mapping",
+        data={
+            "analyst_id": "analyst-1",
+            "file": (io.BytesIO(b"not a report"), "report.txt"),
+        },
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+    store = app.config["REQUEST_STORE"]
+    assert store.get_audit_log() == []
+
+
+def test_submit_field_mapping_request_marks_corrupt_workbook_as_failed_without_leaking_content(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+    corrupt_bytes = b"not a real workbook"
+
+    response = client.post(
+        "/requests/field-mapping",
+        data={
+            "analyst_id": "analyst-1",
+            "file": (io.BytesIO(corrupt_bytes), "report.xlsx"),
+        },
+    )
+
+    assert response.status_code == 400
+    body = response.get_json()
+    request_id = body["request_id"]
+    assert request_id
+    assert body["error"] == "corrupt_report"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert [entry.event for entry in audit_log] == ["request_submitted", "field_mapping_failed"]
+
+    failure_entry = audit_log[1]
+    assert failure_entry.analyst_id == "analyst-1"
+    assert failure_entry.error_category == "corrupt_report"
+
+    for entry in audit_log:
+        serialized = f"{entry.request_id}|{entry.analyst_id}|{entry.event}|{entry.timestamp}|{entry.error_category}"
+        assert corrupt_bytes.decode() not in serialized
+        assert os.sep not in serialized

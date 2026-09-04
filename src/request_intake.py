@@ -145,10 +145,17 @@ class RequestIntake:
             conn.close()
         return self.get_request(request_id)
 
-    def record_clarification(self, request_id: str, analyst_id: str, event: str) -> dict:
-        """Appends a requirement-clarification interaction to the audit
-        trail. Does not change the request's lifecycle status -- generating
-        or reviewing follow-up questions is not itself a status transition.
+    def record_clarification(
+        self, request_id: str, analyst_id: str, event: str, error_category: str | None = None
+    ) -> dict:
+        """Appends an audit-only interaction to the audit trail without
+        changing the request's lifecycle status -- generating/reviewing
+        follow-up questions, or mapping fields on an upload, is not itself a
+        status transition. Originally added for requirement clarification
+        (REQ-004); reused as-is by field mapping (REQ-003, see
+        src/field_mapping_routes.py) since both are "record what happened"
+        actions. error_category is optional and only field mapping's
+        failure path sets it, matching fail_analysis()'s pattern above.
         """
         timestamp = datetime.now(timezone.utc).isoformat()
 
@@ -160,7 +167,7 @@ class RequestIntake:
                 ).fetchone()
                 if row is None:
                     raise KeyError(f"Unknown request_id: {request_id}")
-                self._audit.append(conn, request_id, analyst_id, event, timestamp)
+                self._audit.append(conn, request_id, analyst_id, event, timestamp, error_category)
         finally:
             conn.close()
         return self.get_request(request_id)
