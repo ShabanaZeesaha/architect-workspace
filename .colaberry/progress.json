@@ -3,13 +3,13 @@
   "project": "PowerBI Blueprint",
   "totals": {
     "stories_total": 11,
-    "stories_verified": 1,
+    "stories_verified": 5,
     "stories_submitted": 0,
-    "stories_in_progress": 10,
+    "stories_in_progress": 6,
     "stories_not_started": 0,
     "criteria_total": 35,
-    "criteria_passed": 5,
-    "points_awarded": 73
+    "criteria_passed": 17,
+    "points_awarded": 365
   },
   "stories": [
     {
@@ -77,19 +77,15 @@
       "notes": null,
       "updated_at": null,
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
+        "verified_at": "2026-08-25T00:36:45.183Z",
         "commit_sha": "cfc1ee42a490122aa7a9e1ea319668ed15171976",
         "commit_url": "https://github.com/ShabanaZeesaha/architect-workspace/commit/cfc1ee42a490122aa7a9e1ea319668ed15171976",
         "commit_at": "2026-08-25T00:05:17Z",
-        "points_awarded": null,
-        "outstanding": [
-          "Given a new request, when it is submitted, then it is recorded in the system.",
-          "Given an Excel report, when it is uploaded, then the system analyzes it to identify business objectives and scope.",
-          "Trust: Given an analysis, when it is completed, then it is logged with a timestamp and analyst ID."
-        ]
+        "points_awarded": 73,
+        "outstanding": []
       }
     },
     {
@@ -137,19 +133,15 @@
       "notes": "Adds a lifecycle status field (intake/analyzed/analysis_failed/completed) with an explicit transition map enforcing controlled status changes (illegal moves such as completed->intake are rejected; same-status calls are idempotent no-ops), a PATCH /requests/<id>/status endpoint for updates, a GET /requests/<id> endpoint returning current status plus the full chronological audit trail, and durable SQLite-backed audit entries for every status change.",
       "updated_at": null,
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": null,
-        "outstanding": [
-          "Given a new request, when it is logged, then the system tracks its lifecycle stages.",
-          "Given a request update, when it is processed, then the system updates the status and history.",
-          "Trust: The system maintains an audit trail of status changes."
-        ]
+        "verified_at": "2026-08-25T02:06:33.425Z",
+        "commit_sha": "6e9a48cbc4cc88fa28717a554956ab70642c96bb",
+        "commit_url": "https://github.com/ShabanaZeesaha/architect-workspace/commit/6e9a48cbc4cc88fa28717a554956ab70642c96bb",
+        "commit_at": "2026-08-25T02:06:16Z",
+        "points_awarded": 73,
+        "outstanding": []
       }
     },
     {
@@ -209,19 +201,15 @@
       "notes": "Adds deterministic missing-field detection (src/requirement_clarification.py) over the seven fields analyze_email()/analyze_report() already extract, a POST /requests/<id>/clarify endpoint that returns one follow-up question per missing field (empty list when complete), and an audit entry for every clarification call via a new RequestIntake.record_clarification(). Split the audit log out of request_intake.py into src/audit_trail.py because request_intake.py was already over this repo's 200-line file cap before this change. Also fixed a pre-existing key mismatch in src/excel_analysis.py ('objectives' vs 'business_objectives') that would have broken clarification for Excel-sourced requests.",
       "updated_at": null,
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": null,
-        "outstanding": [
-          "Given an unclear requirement, when it is detected, then the system generates follow-up questions.",
-          "Given a complete requirement, when it is reviewed, then no follow-up questions are generated.",
-          "Trust: The system logs all clarification interactions in the audit trail."
-        ]
+        "verified_at": "2026-09-04T01:13:20.209Z",
+        "commit_sha": "acd71b1de53a6ccbd4aeadaee664d3acf2fda521",
+        "commit_url": "https://github.com/ShabanaZeesaha/architect-workspace/commit/acd71b1de53a6ccbd4aeadaee664d3acf2fda521",
+        "commit_at": "2026-09-04T01:12:38Z",
+        "points_awarded": 73,
+        "outstanding": []
       }
     },
     {
@@ -274,19 +262,15 @@
       "notes": "Maps uploaded report headers (.xlsx/.xlsm via openpyxl, plus .csv) to this repo's one existing approved schema -- REQUIRED_FIELDS from src/email_analysis.py (business_objectives, scope, kpis, filters, calculations, visual_requirements, reporting_expectations), the same fields excel_analysis.py and requirement_clarification.py already validate against; no richer table/column schema exists yet (that's STORY-005+). Unmatched headers are returned in a 'flagged' list rather than silently dropped, unlike excel_analysis.py's own header scan. New POST /requests/field-mapping endpoint follows the submit_excel_request() pattern (reject bad extension before creating a request; mark analysis_failed-style only for a corrupt/empty file after creation). Routes live in a new src/field_mapping_routes.py rather than inline in app.py, which was already at 197 of this repo's 200-line cap (same reason STORY-003 split audit_trail.py out of request_intake.py). Extended RequestIntake.record_clarification() with an optional error_category param (default None, existing callers/tests unchanged) and reused it as-is for field-mapping audit events rather than adding a near-duplicate method, since request_intake.py had only ~17 lines of headroom left. openpyxl was already in requirements.txt from STORY-001. Also includes a `python -m src.field_mapping <path>` CLI entry point for running the mapping directly without the Flask server. Also has a separate, disconnected prototype in docs/Assignment_1/scripts/field_mapping.py from earlier in this session (against an unrelated made-up KB schema) -- superseded by this src/ implementation and not part of this verification.",
       "updated_at": "2026-09-04T02:39:38Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
-        "points_awarded": null,
-        "outstanding": [
-          "Given an Excel report, when it is uploaded, then the system maps fields to approved tables.",
-          "Given a field with no mapping, when it is processed, then the system flags it for review.",
-          "Trust: The system logs all mapping actions in the audit trail."
-        ]
+        "verified_at": "2026-09-04T02:41:40.478Z",
+        "commit_sha": "7a566497a3f055d2a2e8d4f13adca8192a917293",
+        "commit_url": "https://github.com/ShabanaZeesaha/architect-workspace/commit/7a566497a3f055d2a2e8d4f13adca8192a917293",
+        "commit_at": "2026-09-04T02:41:01Z",
+        "points_awarded": 73,
+        "outstanding": []
       }
     },
     {
@@ -296,15 +280,15 @@
       "criteria": [
         {
           "text": "Given a set of requirements, when AI processes them, then it generates design recommendations.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given incomplete data, when AI processes it, then it flags missing information.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Given AI-generated recommendations, when they are created, then they are logged for review.",
-          "passed": false
+          "passed": true
         }
       ],
       "files_touched": [],
@@ -316,9 +300,9 @@
         "criteria_passed": 0,
         "criteria_total": 3,
         "verified_at": null,
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "ef74b290c1a36f179ea69a3ba6e1bdf1fd904a23",
+        "commit_url": "https://github.com/ShabanaZeesaha/architect-workspace/commit/ef74b290c1a36f179ea69a3ba6e1bdf1fd904a23",
+        "commit_at": "2026-09-04T16:26:51Z",
         "points_awarded": null,
         "outstanding": [
           "Given a set of requirements, when AI processes them, then it generates design recommendations.",
