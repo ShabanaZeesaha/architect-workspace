@@ -231,3 +231,66 @@
   three fields is a small, honest follow-up edit once this commit's real
   hash is known, same as STORY-005's `commit_sha` being filled in by a
   later commit (2b61456) referencing ef74b29's real hash.
+
+## 2026-09-04 — STORY-007: Draft Power BI solution generation (REQ-007)
+- Session: CC-20260904-r5fy
+- Added `src/powerbi_solution_template.py`: defines the structural contract
+  for a draft Power BI solution as its own deterministic module, reusing
+  `APPROVED_VISUAL_TYPES` from `src/dashboard_mockup_template.py` rather
+  than redefining it. `validate_solution_shape()` checks a model reply is
+  well-formed (pages/visuals with an approved type, non-empty purpose, and
+  a `field_bindings` list of non-empty strings). `find_mockup_alignment_violations()`
+  is the new check this story needed: it diffs an already-well-formed
+  solution against the specific dashboard mockup it was built from (same
+  page titles/order, same visual types/order per page), which is what
+  "aligns with the mockup" means as a testable condition — distinct from
+  STORY-006's fixed-template compliance check, since this compares against
+  one specific input rather than a static approved list.
+- Added `src/powerbi_solution.py`: `generate_draft_powerbi_solution()`
+  takes an already-generated STORY-006 dashboard mockup, re-validates its
+  shape first (reusing `dashboard_mockup_template.validate_mockup_shape()`,
+  raising `InvalidMockupInputError` with no model call on a malformed
+  input), then calls the configured Claude Haiku model with a prompt that
+  pins pages/visuals/types to exactly match the mockup and asks only for
+  the DAX-measure/field bindings each visual needs, then runs shape
+  validation and mockup-alignment checking in that order.
+- Wired this into a new `POST /requests/<id>/powerbi-solution` endpoint
+  (`src/powerbi_solution_routes.py`), registered from `src/app.py` with an
+  injectable client mirroring the existing `dashboard_mockup_client`
+  pattern. As with STORY-006, the mockup isn't persisted on the request
+  record, so it's supplied directly in the request payload. Every outcome
+  — invalid mockup input, solution generated, mockup mismatch, or the
+  model failing/returning garbage — writes one audit entry
+  (`powerbi_solution_invalid_mockup`, `powerbi_solution_generated`,
+  `powerbi_solution_mockup_mismatch`, or `powerbi_solution_failed`), with
+  the same `500 audit_log_unavailable` guard as STORY-006 if the audit
+  write itself fails.
+- Verification: 158 automated tests passing (`pytest tests/`), up from
+  123 — 16 new unit tests for the template contract (shape validation plus
+  six alignment-violation cases), 10 for solution generation (including
+  the no-model-call-on-invalid-input case), and 9 new route tests (happy
+  path with a full audit-event-order assertion, 404, missing
+  `analyst_id`/`mockup`, invalid mockup input, invalid model response,
+  mockup mismatch, simulated API failure, and the audit-log-failure
+  control path). All external API calls remain mocked — no test spends API
+  credits or requires `ANTHROPIC_API_KEY`.
+- Acceptance criteria (exact portal wording, `.colaberry/progress.json`),
+  all demonstrated by the tests above:
+  - "Given a dashboard mockup, when processed, then the system generates a
+    draft Power BI solution." — happy-path route test.
+  - "Given a draft solution, when reviewed, then it aligns with the
+    mockup." — `find_mockup_alignment_violations()` unit tests plus the
+    route's mockup-mismatch test.
+  - "Trust: The system logs draft generation in the audit trail." —
+    audit-event-order assertion in the happy-path route test, plus the
+    audit-log-failure control test.
+- Files touched: `src/powerbi_solution_template.py` (new),
+  `src/powerbi_solution.py` (new), `src/powerbi_solution_routes.py` (new),
+  `src/app.py`, `tests/test_powerbi_solution_template.py` (new),
+  `tests/test_powerbi_solution.py` (new), `tests/test_app.py`.
+- Note on `.colaberry/progress.json`: this same commit marks all three
+  STORY-007 criteria passed and the story verified, but leaves
+  `commit_sha`/`commit_url`/`commit_at` `null` for the same reason as
+  STORY-006 — a commit cannot correctly record its own resulting hash
+  inside itself. Those three fields are a small follow-up edit once this
+  commit's real hash is known.

@@ -3,13 +3,13 @@
   "project": "PowerBI Blueprint",
   "totals": {
     "stories_total": 11,
-    "stories_verified": 6,
+    "stories_verified": 7,
     "stories_submitted": 0,
-    "stories_in_progress": 5,
+    "stories_in_progress": 4,
     "stories_not_started": 0,
     "criteria_total": 35,
-    "criteria_passed": 20,
-    "points_awarded": 438
+    "criteria_passed": 23,
+    "points_awarded": 511
   },
   "stories": [
     {
@@ -393,35 +393,75 @@
       "criteria": [
         {
           "text": "Given a dashboard mockup, when processed, then the system generates a draft Power BI solution.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a draft solution, when reviewed, then it aligns with the mockup.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs draft generation in the audit trail.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "src/powerbi_solution_template.py",
+        "src/powerbi_solution.py",
+        "src/powerbi_solution_routes.py",
+        "src/app.py",
+        "tests/test_powerbi_solution_template.py",
+        "tests/test_powerbi_solution.py",
+        "tests/test_app.py"
+      ],
+      "tests_added": [
+        "tests/test_powerbi_solution_template.py::test_validate_solution_shape_returns_pages_visuals_and_field_bindings_for_a_well_formed_reply",
+        "tests/test_powerbi_solution_template.py::test_validate_solution_shape_raises_when_pages_is_missing",
+        "tests/test_powerbi_solution_template.py::test_validate_solution_shape_raises_when_pages_is_empty",
+        "tests/test_powerbi_solution_template.py::test_validate_solution_shape_raises_when_a_page_has_no_title",
+        "tests/test_powerbi_solution_template.py::test_validate_solution_shape_raises_when_a_visual_type_is_not_approved",
+        "tests/test_powerbi_solution_template.py::test_validate_solution_shape_raises_when_a_visual_has_no_purpose",
+        "tests/test_powerbi_solution_template.py::test_validate_solution_shape_raises_when_field_bindings_is_missing",
+        "tests/test_powerbi_solution_template.py::test_validate_solution_shape_raises_when_field_bindings_contains_an_empty_string",
+        "tests/test_powerbi_solution_template.py::test_validate_solution_shape_allows_a_page_with_zero_visuals",
+        "tests/test_powerbi_solution_template.py::test_find_mockup_alignment_violations_returns_empty_list_for_an_aligned_solution",
+        "tests/test_powerbi_solution_template.py::test_find_mockup_alignment_violations_ignores_purpose_and_field_binding_differences",
+        "tests/test_powerbi_solution_template.py::test_find_mockup_alignment_violations_flags_a_different_page_count",
+        "tests/test_powerbi_solution_template.py::test_find_mockup_alignment_violations_flags_a_page_title_mismatch",
+        "tests/test_powerbi_solution_template.py::test_find_mockup_alignment_violations_flags_a_different_visual_count",
+        "tests/test_powerbi_solution_template.py::test_find_mockup_alignment_violations_flags_a_visual_type_mismatch",
+        "tests/test_powerbi_solution_template.py::test_draft_mockup_mismatch_error_carries_the_violations_list",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_returns_pages_visuals_and_field_bindings",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_sends_the_mockup_in_the_prompt",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_requires_no_api_key_and_makes_no_network_call",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_raises_invalid_mockup_input_without_calling_model",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_raises_invalid_mockup_input_for_non_dict",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_raises_on_invalid_json",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_raises_on_missing_pages_field",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_raises_mismatch_on_dropped_visual",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_raises_mismatch_on_renamed_page",
+        "tests/test_powerbi_solution.py::test_generate_draft_powerbi_solution_raises_on_simulated_api_failure",
+        "tests/test_app.py::test_submit_powerbi_solution_request_generates_a_solution_for_a_complete_mockup",
+        "tests/test_app.py::test_submit_powerbi_solution_request_returns_404_for_unknown_request_id",
+        "tests/test_app.py::test_submit_powerbi_solution_request_rejects_missing_analyst_id",
+        "tests/test_app.py::test_submit_powerbi_solution_request_rejects_missing_mockup",
+        "tests/test_app.py::test_submit_powerbi_solution_request_marks_invalid_mockup_input_as_failed",
+        "tests/test_app.py::test_submit_powerbi_solution_request_marks_invalid_model_response_as_failed",
+        "tests/test_app.py::test_submit_powerbi_solution_request_marks_mockup_mismatch",
+        "tests/test_app.py::test_submit_powerbi_solution_request_marks_unavailable_model_as_failed",
+        "tests/test_app.py::test_submit_powerbi_solution_request_returns_controlled_error_when_audit_logging_fails"
+      ],
+      "notes": "Generates a draft Power BI solution (pages + visuals + field_bindings) from an already-generated STORY-006 dashboard mockup, supplied directly in the request payload since mockups aren't persisted on the request record. src/powerbi_solution_template.py reuses STORY-006's APPROVED_VISUAL_TYPES and adds find_mockup_alignment_violations(), a positional diff against the specific source mockup (page titles/order, visual types/order) -- the testable meaning of 'aligns with the mockup', distinct from STORY-006's fixed-template check. The input mockup's own shape is re-validated (reusing dashboard_mockup_template.validate_mockup_shape()) before any model call. Same audit-per-outcome and audit_log_unavailable 500 guard pattern as STORY-006. commit_sha/commit_url/commit_at are left null in this verification for the same reason as STORY-006: a commit cannot record its own resulting hash inside itself; filled in by a short follow-up commit once this one's real hash is known.",
+      "updated_at": "2026-09-04T00:00:00.000Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
+        "verified_at": "2026-09-04T00:00:00.000Z",
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
-        "points_awarded": null,
-        "outstanding": [
-          "Given a dashboard mockup, when processed, then the system generates a draft Power BI solution.",
-          "Given a draft solution, when reviewed, then it aligns with the mockup.",
-          "Trust: The system logs draft generation in the audit trail."
-        ]
+        "points_awarded": 73,
+        "outstanding": []
       }
     },
     {

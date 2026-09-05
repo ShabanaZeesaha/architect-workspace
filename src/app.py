@@ -16,6 +16,7 @@ from src.excel_analysis import (
     analyze_report,
 )
 from src.field_mapping_routes import register_field_mapping_routes
+from src.powerbi_solution_routes import register_powerbi_solution_routes
 from src.request_intake import RequestIntake
 from src.requirement_clarification_routes import register_requirement_clarification_routes
 
@@ -30,6 +31,7 @@ def create_app(
     email_client=None,
     design_recommendation_client=None,
     dashboard_mockup_client=None,
+    powerbi_solution_client=None,
 ) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     os.makedirs(app.instance_path, exist_ok=True)
@@ -41,6 +43,7 @@ def create_app(
     app.config["EMAIL_ANALYSIS_CLIENT"] = email_client
     app.config["DESIGN_RECOMMENDATION_CLIENT"] = design_recommendation_client
     app.config["DASHBOARD_MOCKUP_CLIENT"] = dashboard_mockup_client
+    app.config["POWERBI_SOLUTION_CLIENT"] = powerbi_solution_client
 
     @app.get("/health")
     def health():
@@ -172,6 +175,7 @@ def create_app(
     register_requirement_clarification_routes(app)
     register_design_recommendation_routes(app)
     register_dashboard_mockup_routes(app)
+    register_powerbi_solution_routes(app)
 
     return app
 

@@ -93,17 +93,51 @@ def _mock_dashboard_mockup_client(reply_text: str = _VALID_DASHBOARD_MOCKUP_REPL
     return client
 
 
+_COMPLETE_DASHBOARD_MOCKUP = {
+    "pages": [
+        {
+            "title": "Regional Sales Overview",
+            "visuals": [
+                {"type": "bar_chart", "purpose": "Revenue by region"},
+                {"type": "kpi_card", "purpose": "Total revenue"},
+            ],
+        }
+    ]
+}
+
+_VALID_POWERBI_SOLUTION_REPLY = """{
+    "pages": [
+        {
+            "title": "Regional Sales Overview",
+            "visuals": [
+                {"type": "bar_chart", "purpose": "Revenue by region", "field_bindings": ["Sales[Region]"]},
+                {"type": "kpi_card", "purpose": "Total revenue", "field_bindings": ["Total Revenue"]}
+            ]
+        }
+    ]
+}"""
+
+
+def _mock_powerbi_solution_client(reply_text: str = _VALID_POWERBI_SOLUTION_REPLY) -> Mock:
+    response = SimpleNamespace(content=[SimpleNamespace(type="text", text=reply_text)])
+    client = Mock()
+    client.messages.create.return_value = response
+    return client
+
+
 def _new_app(
     tmp_path,
     email_client=None,
     design_recommendation_client=None,
     dashboard_mockup_client=None,
+    powerbi_solution_client=None,
 ):
     return create_app(
         db_path=str(tmp_path / "test.db"),
         email_client=email_client,
         design_recommendation_client=design_recommendation_client,
         dashboard_mockup_client=dashboard_mockup_client,
+        powerbi_solution_client=powerbi_solution_client,
     )
 
 
@@ -1086,3 +1120,185 @@ def test_submit_dashboard_mockup_request_returns_controlled_error_when_audit_log
     assert response.status_code == 500
     assert response.get_json()["error"] == "audit_log_unavailable"
     mockup_client.messages.create.assert_called_once()
+
+
+def test_submit_powerbi_solution_request_generates_a_solution_for_a_complete_mockup(tmp_path):
+    email_client = _mock_email_client()
+    solution_client = _mock_powerbi_solution_client()
+    app = _new_app(tmp_path, email_client=email_client, powerbi_solution_client=solution_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/powerbi-solution",
+        json={"analyst_id": "designer-1", "mockup": _COMPLETE_DASHBOARD_MOCKUP},
+    )
+
+    assert response.status_code == 201
+    body = response.get_json()
+    assert body["request_id"] == request_id
+    assert body["solution"]["pages"][0]["title"] == "Regional Sales Overview"
+    assert body["solution"]["pages"][0]["visuals"][0]["field_bindings"] == ["Sales[Region]"]
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert [entry.event for entry in audit_log] == [
+        "request_submitted",
+        "analysis_completed",
+        "powerbi_solution_generated",
+    ]
+    assert audit_log[-1].analyst_id == "designer-1"
+
+
+def test_submit_powerbi_solution_request_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post(
+        "/requests/does-not-exist/powerbi-solution",
+        json={"analyst_id": "designer-1", "mockup": _COMPLETE_DASHBOARD_MOCKUP},
+    )
+
+    assert response.status_code == 404
+    assert response.get_json()["error"] == "request_not_found"
+
+
+def test_submit_powerbi_solution_request_rejects_missing_analyst_id(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/powerbi-solution",
+        json={"mockup": _COMPLETE_DASHBOARD_MOCKUP},
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+
+def test_submit_powerbi_solution_request_rejects_missing_mockup(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/powerbi-solution", json={"analyst_id": "designer-1"}
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+
+def test_submit_powerbi_solution_request_marks_invalid_mockup_input_as_failed(tmp_path):
+    email_client = _mock_email_client()
+    solution_client = _mock_powerbi_solution_client()
+    app = _new_app(tmp_path, email_client=email_client, powerbi_solution_client=solution_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/powerbi-solution",
+        json={"analyst_id": "designer-1", "mockup": {"pages": []}},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "invalid_mockup"
+    solution_client.messages.create.assert_not_called()
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert audit_log[-1].event == "powerbi_solution_invalid_mockup"
+
+
+def test_submit_powerbi_solution_request_marks_invalid_model_response_as_failed(tmp_path):
+    email_client = _mock_email_client()
+    solution_client = _mock_powerbi_solution_client(reply_text="this is not json")
+    app = _new_app(tmp_path, email_client=email_client, powerbi_solution_client=solution_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/powerbi-solution",
+        json={"analyst_id": "designer-1", "mockup": _COMPLETE_DASHBOARD_MOCKUP},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "invalid_model_response"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert audit_log[-1].event == "powerbi_solution_failed"
+    assert audit_log[-1].error_category == "invalid_model_response"
+
+
+def test_submit_powerbi_solution_request_marks_mockup_mismatch(tmp_path):
+    email_client = _mock_email_client()
+    dropped_visual_reply = (
+        '{"pages": [{"title": "Regional Sales Overview", "visuals": '
+        '[{"type": "bar_chart", "purpose": "Revenue by region", "field_bindings": ["f"]}]}]}'
+    )
+    solution_client = _mock_powerbi_solution_client(reply_text=dropped_visual_reply)
+    app = _new_app(tmp_path, email_client=email_client, powerbi_solution_client=solution_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/powerbi-solution",
+        json={"analyst_id": "designer-1", "mockup": _COMPLETE_DASHBOARD_MOCKUP},
+    )
+
+    assert response.status_code == 400
+    body = response.get_json()
+    assert body["error"] == "mockup_mismatch"
+    assert "visual(s)" in body["violations"][0]
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert audit_log[-1].event == "powerbi_solution_mockup_mismatch"
+    assert "visual(s)" in audit_log[-1].error_category
+
+
+def test_submit_powerbi_solution_request_marks_unavailable_model_as_failed(tmp_path):
+    email_client = _mock_email_client()
+    solution_client = Mock()
+    api_request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    solution_client.messages.create.side_effect = anthropic.APIConnectionError(request=api_request)
+    app = _new_app(tmp_path, email_client=email_client, powerbi_solution_client=solution_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/powerbi-solution",
+        json={"analyst_id": "designer-1", "mockup": _COMPLETE_DASHBOARD_MOCKUP},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "powerbi_solution_unavailable"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert audit_log[-1].event == "powerbi_solution_failed"
+    assert audit_log[-1].error_category == "powerbi_solution_unavailable"
+
+
+def test_submit_powerbi_solution_request_returns_controlled_error_when_audit_logging_fails(tmp_path):
+    email_client = _mock_email_client()
+    solution_client = _mock_powerbi_solution_client()
+    app = _new_app(tmp_path, email_client=email_client, powerbi_solution_client=solution_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    app.config["REQUEST_STORE"].record_clarification = Mock(
+        side_effect=sqlite3.OperationalError("disk I/O error")
+    )
+
+    response = client.post(
+        f"/requests/{request_id}/powerbi-solution",
+        json={"analyst_id": "designer-1", "mockup": _COMPLETE_DASHBOARD_MOCKUP},
+    )
+
+    assert response.status_code == 500
+    assert response.get_json()["error"] == "audit_log_unavailable"
+    solution_client.messages.create.assert_called_once()
