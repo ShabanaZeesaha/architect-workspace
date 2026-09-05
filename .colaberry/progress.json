@@ -450,16 +450,16 @@
         "tests/test_app.py::test_submit_powerbi_solution_request_marks_unavailable_model_as_failed",
         "tests/test_app.py::test_submit_powerbi_solution_request_returns_controlled_error_when_audit_logging_fails"
       ],
-      "notes": "Generates a draft Power BI solution (pages + visuals + field_bindings) from an already-generated STORY-006 dashboard mockup, supplied directly in the request payload since mockups aren't persisted on the request record. src/powerbi_solution_template.py reuses STORY-006's APPROVED_VISUAL_TYPES and adds find_mockup_alignment_violations(), a positional diff against the specific source mockup (page titles/order, visual types/order) -- the testable meaning of 'aligns with the mockup', distinct from STORY-006's fixed-template check. The input mockup's own shape is re-validated (reusing dashboard_mockup_template.validate_mockup_shape()) before any model call. Same audit-per-outcome and audit_log_unavailable 500 guard pattern as STORY-006. commit_sha/commit_url/commit_at are left null in this verification for the same reason as STORY-006: a commit cannot record its own resulting hash inside itself; filled in by a short follow-up commit once this one's real hash is known.",
+      "notes": "Generates a draft Power BI solution (pages + visuals + field_bindings) from an already-generated STORY-006 dashboard mockup, supplied directly in the request payload since mockups aren't persisted on the request record. src/powerbi_solution_template.py reuses STORY-006's APPROVED_VISUAL_TYPES and adds find_mockup_alignment_violations(), a positional diff against the specific source mockup (page titles/order, visual types/order) -- the testable meaning of 'aligns with the mockup', distinct from STORY-006's fixed-template check. The input mockup's own shape is re-validated (reusing dashboard_mockup_template.validate_mockup_shape()) before any model call. Same audit-per-outcome and audit_log_unavailable 500 guard pattern as STORY-006. commit_sha/commit_url/commit_at were filled in by a short follow-up commit once 00c419c's real hash was known, same as STORY-005's commit_sha being filled in after the fact by 2b61456.",
       "updated_at": "2026-09-04T00:00:00.000Z",
       "verification": {
         "state": "verified",
         "criteria_passed": 3,
         "criteria_total": 3,
         "verified_at": "2026-09-04T00:00:00.000Z",
-        "commit_sha": null,
-        "commit_url": null,
-        "commit_at": null,
+        "commit_sha": "00c419c11847a21f496effeed9ef0ecb78f4de26",
+        "commit_url": "https://github.com/ShabanaZeesaha/architect-workspace/commit/00c419c11847a21f496effeed9ef0ecb78f4de26",
+        "commit_at": "2026-09-05T03:17:17Z",
         "points_awarded": 73,
         "outstanding": []
       }
