@@ -3,13 +3,13 @@
   "project": "PowerBI Blueprint",
   "totals": {
     "stories_total": 11,
-    "stories_verified": 5,
+    "stories_verified": 6,
     "stories_submitted": 0,
-    "stories_in_progress": 6,
+    "stories_in_progress": 5,
     "stories_not_started": 0,
     "criteria_total": 35,
-    "criteria_passed": 17,
-    "points_awarded": 365
+    "criteria_passed": 20,
+    "points_awarded": 438
   },
   "stories": [
     {
@@ -318,35 +318,72 @@
       "criteria": [
         {
           "text": "Given a design recommendation, when processed, then the system generates a dashboard mockup.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a mockup, when reviewed, then it matches the approved template.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs mockup generation in the audit trail.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "src/dashboard_mockup.py",
+        "src/dashboard_mockup_template.py",
+        "src/dashboard_mockup_routes.py",
+        "src/app.py",
+        "tests/test_dashboard_mockup.py",
+        "tests/test_dashboard_mockup_template.py",
+        "tests/test_app.py"
+      ],
+      "tests_added": [
+        "tests/test_dashboard_mockup_template.py::test_validate_mockup_shape_returns_pages_and_visuals_for_a_well_formed_reply",
+        "tests/test_dashboard_mockup_template.py::test_validate_mockup_shape_raises_when_pages_is_missing",
+        "tests/test_dashboard_mockup_template.py::test_validate_mockup_shape_raises_when_pages_is_empty",
+        "tests/test_dashboard_mockup_template.py::test_validate_mockup_shape_raises_when_a_page_has_no_title",
+        "tests/test_dashboard_mockup_template.py::test_validate_mockup_shape_raises_when_a_visual_has_no_type",
+        "tests/test_dashboard_mockup_template.py::test_validate_mockup_shape_raises_when_a_visual_has_no_purpose",
+        "tests/test_dashboard_mockup_template.py::test_validate_mockup_shape_allows_a_page_with_zero_visuals",
+        "tests/test_dashboard_mockup_template.py::test_find_template_violations_returns_empty_list_for_a_compliant_mockup",
+        "tests/test_dashboard_mockup_template.py::test_find_template_violations_flags_an_unapproved_visual_type",
+        "tests/test_dashboard_mockup_template.py::test_find_template_violations_flags_a_page_with_no_visuals",
+        "tests/test_dashboard_mockup_template.py::test_mockup_template_mismatch_error_carries_the_violations_list",
+        "tests/test_dashboard_mockup.py::test_generate_dashboard_mockup_returns_pages_and_visuals",
+        "tests/test_dashboard_mockup.py::test_generate_dashboard_mockup_sends_the_recommendation_in_the_prompt",
+        "tests/test_dashboard_mockup.py::test_generate_dashboard_mockup_requires_no_api_key_and_makes_no_network_call",
+        "tests/test_dashboard_mockup.py::test_generate_dashboard_mockup_raises_incomplete_recommendation_without_calling_model",
+        "tests/test_dashboard_mockup.py::test_generate_dashboard_mockup_raises_on_invalid_json",
+        "tests/test_dashboard_mockup.py::test_generate_dashboard_mockup_raises_on_missing_pages_field",
+        "tests/test_dashboard_mockup.py::test_generate_dashboard_mockup_raises_template_mismatch_on_unapproved_visual_type",
+        "tests/test_dashboard_mockup.py::test_generate_dashboard_mockup_raises_template_mismatch_on_page_with_no_visuals",
+        "tests/test_dashboard_mockup.py::test_generate_dashboard_mockup_raises_on_simulated_api_failure",
+        "tests/test_dashboard_mockup.py::test_find_missing_mockup_input_fields_returns_empty_list_for_a_complete_recommendation",
+        "tests/test_dashboard_mockup.py::test_find_missing_mockup_input_fields_returns_the_names_of_empty_fields",
+        "tests/test_dashboard_mockup.py::test_find_missing_mockup_input_fields_raises_for_non_dict_input",
+        "tests/test_app.py::test_submit_dashboard_mockup_request_generates_a_mockup_for_a_complete_recommendation",
+        "tests/test_app.py::test_submit_dashboard_mockup_request_flags_missing_information_without_calling_model",
+        "tests/test_app.py::test_submit_dashboard_mockup_request_returns_404_for_unknown_request_id",
+        "tests/test_app.py::test_submit_dashboard_mockup_request_rejects_missing_analyst_id",
+        "tests/test_app.py::test_submit_dashboard_mockup_request_rejects_missing_recommendation",
+        "tests/test_app.py::test_submit_dashboard_mockup_request_marks_invalid_model_response_as_failed",
+        "tests/test_app.py::test_submit_dashboard_mockup_request_marks_template_mismatch",
+        "tests/test_app.py::test_submit_dashboard_mockup_request_marks_unavailable_model_as_failed",
+        "tests/test_app.py::test_submit_dashboard_mockup_request_returns_controlled_error_when_audit_logging_fails"
+      ],
+      "notes": "Generates a dashboard mockup (pages + visuals) from an already-generated STORY-005 design recommendation, supplied directly in the request payload since recommendations aren't persisted on the request record. src/dashboard_mockup_template.py defines the approved template as its own deterministic contract (APPROVED_VISUAL_TYPES plus shape/compliance checks) so 'matches the approved template' is independently testable from AI-call orchestration in src/dashboard_mockup.py. Every outcome (missing data, generated, template mismatch, model/API failure) writes an audit entry; if that audit write itself fails (sqlite3.Error), the new route returns a controlled 500 audit_log_unavailable instead of crashing or silently treating the outcome as logged -- a fix scoped to this route only, not a refactor of the older AI-assisted routes. commit_sha/commit_url/commit_at are left null in this verification: a commit cannot correctly record its own resulting hash inside itself, so those three fields are filled by a short follow-up commit once this one's real hash is known (same pattern as STORY-005's commit_sha being filled in after the fact by 2b61456).",
+      "updated_at": "2026-09-05T01:37:05.000Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
+        "verified_at": "2026-09-05T01:37:05.000Z",
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
-        "points_awarded": null,
-        "outstanding": [
-          "Given a design recommendation, when processed, then the system generates a dashboard mockup.",
-          "Given a mockup, when reviewed, then it matches the approved template.",
-          "Trust: The system logs mockup generation in the audit trail."
-        ]
+        "points_awarded": 73,
+        "outstanding": []
       }
     },
     {

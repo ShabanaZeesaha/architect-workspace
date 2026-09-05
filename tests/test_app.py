@@ -1,5 +1,6 @@
 import io
 import os
+import sqlite3
 from datetime import datetime
 from types import SimpleNamespace
 from unittest.mock import Mock
@@ -60,11 +61,49 @@ def _mock_design_recommendation_client(reply_text: str = _VALID_DESIGN_RECOMMEND
     return client
 
 
-def _new_app(tmp_path, email_client=None, design_recommendation_client=None):
+_COMPLETE_DESIGN_RECOMMENDATION = {
+    "data_model": ["Sales fact table", "Region dimension table"],
+    "relationships": ["Sales.RegionID -> Region.RegionID"],
+    "transformations": ["Aggregate sales by region and quarter"],
+    "validation_checks": ["Sales amounts are non-negative"],
+    "kpi_definitions": ["Total Revenue = SUM(Sales[Amount])"],
+    "dax_measures": ["Total Revenue := SUM(Sales[Amount])"],
+    "report_pages": ["Regional Sales Overview"],
+    "slicers": ["Region", "Quarter"],
+    "visual_design": ["Bar chart comparing revenue by region"],
+}
+
+_VALID_DASHBOARD_MOCKUP_REPLY = """{
+    "pages": [
+        {
+            "title": "Regional Sales Overview",
+            "visuals": [
+                {"type": "bar_chart", "purpose": "Revenue by region"},
+                {"type": "kpi_card", "purpose": "Total revenue"}
+            ]
+        }
+    ]
+}"""
+
+
+def _mock_dashboard_mockup_client(reply_text: str = _VALID_DASHBOARD_MOCKUP_REPLY) -> Mock:
+    response = SimpleNamespace(content=[SimpleNamespace(type="text", text=reply_text)])
+    client = Mock()
+    client.messages.create.return_value = response
+    return client
+
+
+def _new_app(
+    tmp_path,
+    email_client=None,
+    design_recommendation_client=None,
+    dashboard_mockup_client=None,
+):
     return create_app(
         db_path=str(tmp_path / "test.db"),
         email_client=email_client,
         design_recommendation_client=design_recommendation_client,
+        dashboard_mockup_client=dashboard_mockup_client,
     )
 
 
@@ -857,3 +896,193 @@ def test_submit_design_recommendation_request_marks_unavailable_model_as_failed(
     audit_log = store.get_audit_log(request_id)
     assert audit_log[-1].event == "design_recommendations_failed"
     assert audit_log[-1].error_category == "design_recommendation_unavailable"
+
+
+def test_submit_dashboard_mockup_request_generates_a_mockup_for_a_complete_recommendation(tmp_path):
+    email_client = _mock_email_client()
+    mockup_client = _mock_dashboard_mockup_client()
+    app = _new_app(tmp_path, email_client=email_client, dashboard_mockup_client=mockup_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/dashboard-mockup",
+        json={"analyst_id": "designer-1", "recommendation": _COMPLETE_DESIGN_RECOMMENDATION},
+    )
+
+    assert response.status_code == 201
+    body = response.get_json()
+    assert body["request_id"] == request_id
+    assert body["mockup"]["pages"][0]["title"] == "Regional Sales Overview"
+    assert body["mockup"]["pages"][0]["visuals"][0]["type"] == "bar_chart"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert [entry.event for entry in audit_log] == [
+        "request_submitted",
+        "analysis_completed",
+        "dashboard_mockup_generated",
+    ]
+    assert audit_log[-1].analyst_id == "designer-1"
+
+
+def test_submit_dashboard_mockup_request_flags_missing_information_without_calling_model(tmp_path):
+    email_client = _mock_email_client()
+    mockup_client = _mock_dashboard_mockup_client()
+    app = _new_app(tmp_path, email_client=email_client, dashboard_mockup_client=mockup_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    incomplete_recommendation = dict(_COMPLETE_DESIGN_RECOMMENDATION, report_pages=[], visual_design=[])
+
+    response = client.post(
+        f"/requests/{request_id}/dashboard-mockup",
+        json={"analyst_id": "designer-1", "recommendation": incomplete_recommendation},
+    )
+
+    assert response.status_code == 400
+    body = response.get_json()
+    assert body["error"] == "incomplete_recommendation"
+    assert body["missing_fields"] == ["report_pages", "visual_design"]
+    mockup_client.messages.create.assert_not_called()
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert [entry.event for entry in audit_log] == [
+        "request_submitted",
+        "analysis_completed",
+        "dashboard_mockup_missing_data",
+    ]
+    assert audit_log[-1].error_category == "report_pages,visual_design"
+
+
+def test_submit_dashboard_mockup_request_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post(
+        "/requests/does-not-exist/dashboard-mockup",
+        json={"analyst_id": "designer-1", "recommendation": _COMPLETE_DESIGN_RECOMMENDATION},
+    )
+
+    assert response.status_code == 404
+    assert response.get_json()["error"] == "request_not_found"
+
+
+def test_submit_dashboard_mockup_request_rejects_missing_analyst_id(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/dashboard-mockup",
+        json={"recommendation": _COMPLETE_DESIGN_RECOMMENDATION},
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+
+def test_submit_dashboard_mockup_request_rejects_missing_recommendation(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/dashboard-mockup", json={"analyst_id": "designer-1"}
+    )
+
+    assert response.status_code == 400
+    assert "error" in response.get_json()
+
+
+def test_submit_dashboard_mockup_request_marks_invalid_model_response_as_failed(tmp_path):
+    email_client = _mock_email_client()
+    mockup_client = _mock_dashboard_mockup_client(reply_text="this is not json")
+    app = _new_app(tmp_path, email_client=email_client, dashboard_mockup_client=mockup_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/dashboard-mockup",
+        json={"analyst_id": "designer-1", "recommendation": _COMPLETE_DESIGN_RECOMMENDATION},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "invalid_model_response"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert audit_log[-1].event == "dashboard_mockup_failed"
+    assert audit_log[-1].error_category == "invalid_model_response"
+
+
+def test_submit_dashboard_mockup_request_marks_template_mismatch(tmp_path):
+    email_client = _mock_email_client()
+    mismatched_reply = (
+        '{"pages": [{"title": "Overview", '
+        '"visuals": [{"type": "3d_scatter_globe", "purpose": "x"}]}]}'
+    )
+    mockup_client = _mock_dashboard_mockup_client(reply_text=mismatched_reply)
+    app = _new_app(tmp_path, email_client=email_client, dashboard_mockup_client=mockup_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/dashboard-mockup",
+        json={"analyst_id": "designer-1", "recommendation": _COMPLETE_DESIGN_RECOMMENDATION},
+    )
+
+    assert response.status_code == 400
+    body = response.get_json()
+    assert body["error"] == "template_mismatch"
+    assert "3d_scatter_globe" in body["violations"][0]
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert audit_log[-1].event == "dashboard_mockup_template_mismatch"
+    assert "3d_scatter_globe" in audit_log[-1].error_category
+
+
+def test_submit_dashboard_mockup_request_marks_unavailable_model_as_failed(tmp_path):
+    email_client = _mock_email_client()
+    mockup_client = Mock()
+    api_request = httpx.Request("POST", "https://api.anthropic.com/v1/messages")
+    mockup_client.messages.create.side_effect = anthropic.APIConnectionError(request=api_request)
+    app = _new_app(tmp_path, email_client=email_client, dashboard_mockup_client=mockup_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/dashboard-mockup",
+        json={"analyst_id": "designer-1", "recommendation": _COMPLETE_DESIGN_RECOMMENDATION},
+    )
+
+    assert response.status_code == 400
+    assert response.get_json()["error"] == "dashboard_mockup_unavailable"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    assert audit_log[-1].event == "dashboard_mockup_failed"
+    assert audit_log[-1].error_category == "dashboard_mockup_unavailable"
+
+
+def test_submit_dashboard_mockup_request_returns_controlled_error_when_audit_logging_fails(tmp_path):
+    email_client = _mock_email_client()
+    mockup_client = _mock_dashboard_mockup_client()
+    app = _new_app(tmp_path, email_client=email_client, dashboard_mockup_client=mockup_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    app.config["REQUEST_STORE"].record_clarification = Mock(
+        side_effect=sqlite3.OperationalError("disk I/O error")
+    )
+
+    response = client.post(
+        f"/requests/{request_id}/dashboard-mockup",
+        json={"analyst_id": "designer-1", "recommendation": _COMPLETE_DESIGN_RECOMMENDATION},
+    )
+
+    assert response.status_code == 500
+    assert response.get_json()["error"] == "audit_log_unavailable"
+    mockup_client.messages.create.assert_called_once()

@@ -165,3 +165,69 @@
   flag with no model call, 404/400 paths, invalid model response,
   simulated API failure) and 7 new unit tests for the core module. All
   external API calls remain mocked.
+
+## 2026-09-04 — STORY-006: Dashboard mockup generation (REQ-006)
+- Added `src/dashboard_mockup_template.py`: defines this system's approved
+  dashboard template as a deterministic contract — `APPROVED_VISUAL_TYPES`
+  (bar_chart, line_chart, pie_chart, kpi_card, table, matrix, slicer, map,
+  gauge), `validate_mockup_shape()` (is a model reply well-formed at all),
+  and `find_template_violations()` (does an already-well-formed mockup
+  actually comply — an unapproved visual type, or a page with no visuals).
+  Split into its own module from the start, not as a later line-count fix,
+  because REQ-006's "matches the approved template" acceptance criterion
+  needed its own independently testable contract, distinct from AI-call
+  orchestration.
+- Added `src/dashboard_mockup.py`: `generate_dashboard_mockup()` builds a
+  mockup from an already-generated design recommendation
+  (`src/design_recommendation.py`, STORY-005). Missing-input detection runs
+  first and is deterministic — a recommendation with empty `report_pages`
+  or `visual_design` never reaches the model (`IncompleteRecommendationError`).
+  A well-formed-but-non-compliant reply raises `MockupTemplateMismatchError`
+  as an outcome distinct from `InvalidDashboardMockupResponseError`
+  (malformed JSON/shape), matching the acceptance criteria's separate
+  "generates a mockup" vs. "matches the approved template" conditions.
+- Wired this into a new `POST /requests/<id>/dashboard-mockup` endpoint
+  (`src/dashboard_mockup_routes.py`), registered from `src/app.py` with an
+  injectable client mirroring the existing `design_recommendation_client`
+  pattern. A design recommendation isn't persisted anywhere (STORY-005's
+  endpoint only returns it, never stores it on the request record), so the
+  recommendation is supplied directly in the request payload here rather
+  than fetched from the stored record.
+- Every outcome — missing data, mockup generated, template mismatch, or the
+  model failing/returning garbage — writes one audit entry via
+  `RequestIntake.record_clarification()` (`dashboard_mockup_missing_data`,
+  `dashboard_mockup_generated`, `dashboard_mockup_template_mismatch`, or
+  `dashboard_mockup_failed`).
+- Hardened the audit write itself, scoped to this new route only: if
+  `record_clarification()` raises `sqlite3.Error` (e.g. a locked or
+  unwritable database), the route returns a controlled
+  `500 audit_log_unavailable` instead of crashing on an unhandled exception
+  or silently returning the original outcome as though it had been logged.
+  The older AI-assisted routes (requirement clarification, field mapping,
+  design recommendations) were left untouched — this was a targeted fix for
+  the new route, not a repo-wide refactor.
+- Verification: 123 automated tests passing (`pytest tests/`), up from 91 —
+  11 new unit tests for the template contract, 12 for mockup generation, and
+  9 new route tests (happy path with a full audit-event-order assertion,
+  missing-data gate, 404, missing `analyst_id`/`recommendation`, invalid
+  model response, template mismatch, simulated API failure, and the new
+  audit-log-failure control path). All external API calls remain mocked.
+- Acceptance criteria (exact portal wording, `.colaberry/progress.json`),
+  all demonstrated by the tests above:
+  - "Given a design recommendation, when processed, then the system
+    generates a dashboard mockup." — happy-path route test.
+  - "Given a mockup, when reviewed, then it matches the approved template."
+    — `find_template_violations()` unit tests plus the route's
+    template-mismatch test.
+  - "Trust: The system logs mockup generation in the audit trail." —
+    audit-event-order assertion in the happy-path route test, plus the new
+    audit-log-failure control test.
+- Note on `.colaberry/progress.json`: this same commit marks all three
+  STORY-006 criteria passed and the story verified, but leaves
+  `commit_sha`/`commit_url`/`commit_at` `null` — a commit cannot correctly
+  record its own resulting hash inside itself (the hash is computed from
+  the commit's content, so any value written inside it would necessarily be
+  wrong, and this repo's `Trust` principle rules that out). Filling those
+  three fields is a small, honest follow-up edit once this commit's real
+  hash is known, same as STORY-005's `commit_sha` being filled in by a
+  later commit (2b61456) referencing ef74b29's real hash.

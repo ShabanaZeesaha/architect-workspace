@@ -3,6 +3,7 @@ import tempfile
 
 from flask import Flask, jsonify, request
 
+from src.dashboard_mockup_routes import register_dashboard_mockup_routes
 from src.design_recommendation_routes import register_design_recommendation_routes
 from src.email_analysis import (
     EmailAnalysisError,
@@ -24,7 +25,12 @@ _ANALYSIS_FAILURE_CATEGORIES = {
 }
 
 
-def create_app(db_path: str | None = None, email_client=None, design_recommendation_client=None) -> Flask:
+def create_app(
+    db_path: str | None = None,
+    email_client=None,
+    design_recommendation_client=None,
+    dashboard_mockup_client=None,
+) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     os.makedirs(app.instance_path, exist_ok=True)
 
@@ -34,6 +40,7 @@ def create_app(db_path: str | None = None, email_client=None, design_recommendat
     app.config["REQUEST_STORE"] = RequestIntake(db_path)
     app.config["EMAIL_ANALYSIS_CLIENT"] = email_client
     app.config["DESIGN_RECOMMENDATION_CLIENT"] = design_recommendation_client
+    app.config["DASHBOARD_MOCKUP_CLIENT"] = dashboard_mockup_client
 
     @app.get("/health")
     def health():
@@ -164,6 +171,7 @@ def create_app(db_path: str | None = None, email_client=None, design_recommendat
     register_field_mapping_routes(app)
     register_requirement_clarification_routes(app)
     register_design_recommendation_routes(app)
+    register_dashboard_mockup_routes(app)
 
     return app
 
