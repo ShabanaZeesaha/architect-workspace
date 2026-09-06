@@ -383,3 +383,89 @@
   STORY-006 and STORY-007 — a commit cannot correctly record its own
   resulting hash inside itself. Those three fields are a small follow-up
   edit once this commit's real hash is known.
+
+## 2026-09-05 — STORY-009: Data Validation and Finalization (REQ-014)
+- Session: CC-20260905-n7wq
+- Extended `src/lifecycle.py` with a `validated` status. `approved` gains
+  two legal transitions: `validated` (data accuracy confirmed) or
+  `changes_requested` (validation failure) — the failure path deliberately
+  reuses STORY-008's existing correction loop (`changes_requested` →
+  `in_review` → re-review → re-approve) rather than a parallel one, since
+  "flagged for correction" is exactly what `changes_requested` already
+  means. `validated` has no outgoing transition yet — publication
+  (STORY-010) is out of scope here.
+- Added `src/data_validation_rules.py`: `find_data_accuracy_violations()`
+  defines "data accuracy confirmed" as a deterministic, testable condition
+  — every `field_binding` referenced by an approved draft solution's
+  visuals must trace back (case-insensitive substring match, either
+  direction) to something actually stated in the request's own `analysis`
+  (`business_objectives`, `scope`, `kpis`, `filters`, `calculations`,
+  `visual_requirements`, `reporting_expectations`). No model call is
+  needed or used — this is a pure function, kept separate from
+  `src/data_validation.py` the same way `powerbi_solution_template.py` is
+  split from `powerbi_solution.py`. A `field_binding` that doesn't trace
+  back is either an upstream-fabricated field or a mismatch introduced
+  along the pipeline; either way it can't be finalized without a human
+  correcting it.
+- Added `src/data_validation.py`: `DataValidation.validate()` fetches the
+  request, raises `MissingValidationDataError` if `analysis` or
+  `draft_solution` is absent, runs the accuracy check, then atomically
+  updates status and writes exactly one audit entry
+  (`data_validation_passed` or `data_validation_failed`, the latter
+  storing the joined violation list in the audit entry's existing
+  `error_category` slot) in a single transaction — same `_transition`
+  shape as `StakeholderReview`, reusing `TRANSITIONS` for legality rather
+  than hardcoding a status check, so calling `validate()` on a request
+  that isn't `approved` raises `InvalidTransitionError` on its own.
+- Wired into `POST /requests/<id>/validate`
+  (`src/data_validation_routes.py`), registered from `src/app.py`
+  alongside a new `DataValidation` instance in `app.config`. Unlike the
+  AI-generation routes, there's no separate audit-write step to wrap —
+  but this story's failure list explicitly names "audit trail logging
+  fails" as a case to handle, so a `sqlite3.Error` raised inside that
+  atomic transition/audit write (the whole transaction rolls back,
+  leaving status unchanged) is caught here and returned as a controlled
+  `500 audit_log_unavailable` instead of an unhandled exception.
+- Verification: 209 automated tests passing (`pytest tests/`), up from
+  190 — 5 new unit tests for the accuracy rule (match, mismatch,
+  case-insensitivity, empty `field_bindings`, multiple violations across
+  pages), 8 for `data_validation.py` (both outcomes' status transitions
+  and audit content, unknown request, not-yet-approved rejection, and a
+  direct-SQL-manipulation test for the missing-data guard), and 6 new
+  route tests in `test_app.py` (both outcomes end-to-end through the real
+  submit → analyze → submit-for-review → approve → validate flow, 404,
+  400 missing `analyst_id`, 409 not-yet-approved, and the
+  `audit_log_unavailable` control path, mirroring the same mock pattern
+  used by the `dashboard-mockup`/`powerbi-solution` routes but targeting
+  `DataValidation._audit.append` directly since this story's transition
+  and audit write are atomic inside `DataValidation` itself). All
+  existing 190 tests continue to pass unmodified. No external API calls
+  in this story — the accuracy check is fully deterministic.
+- Manual smoke test (scratch SQLite database, no test client fixtures):
+  ran the real Flask app through `create_app()` for both outcomes —
+  accurate data ends at `validated` with a `data_validation_passed` audit
+  entry, inaccurate data ends at `changes_requested` with a
+  `data_validation_failed` audit entry whose `error_category` names the
+  unmatched `field_binding`. Both confirmed against the live audit log,
+  not just test assertions. Scratch database discarded after the run.
+- Acceptance criteria (exact portal wording, `.colaberry/progress.json`),
+  all demonstrated by the tests and smoke test above:
+  - "Given a draft solution, when validated, then data accuracy is
+    confirmed." — `find_data_accuracy_violations()` unit tests plus the
+    route's happy-path test and smoke test.
+  - "Given a validation failure, when detected, then the system flags it
+    for correction." — the `changes_requested` transition, unit-tested
+    and smoke-tested.
+  - "Trust: The system logs all validation actions in the audit trail." —
+    audit-content assertions for both outcomes, unit and route level,
+    plus the smoke test's live audit-log check.
+- Files touched: `src/lifecycle.py`, `src/data_validation_rules.py`
+  (new), `src/data_validation.py` (new), `src/data_validation_routes.py`
+  (new), `src/app.py`, `tests/test_data_validation_rules.py` (new),
+  `tests/test_data_validation.py` (new), `tests/test_app.py`.
+- Note on `.colaberry/progress.json`: this same commit marks all three
+  STORY-009 criteria passed and the story verified, but leaves
+  `commit_sha`/`commit_url`/`commit_at` `null` for the same reason as
+  STORY-006 through STORY-008 — a commit cannot correctly record its own
+  resulting hash inside itself. Those three fields are a small follow-up
+  edit once this commit's real hash is known.

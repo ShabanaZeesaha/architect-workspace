@@ -125,6 +125,19 @@ def _mock_powerbi_solution_client(reply_text: str = _VALID_POWERBI_SOLUTION_REPL
     return client
 
 
+_COMPLETE_POWERBI_SOLUTION = {
+    "pages": [
+        {
+            "title": "Regional Sales Overview",
+            "visuals": [
+                {"type": "bar_chart", "purpose": "Revenue by region", "field_bindings": ["Sales[Region]"]},
+                {"type": "kpi_card", "purpose": "Total revenue", "field_bindings": ["Total Revenue"]},
+            ],
+        }
+    ]
+}
+
+
 def _new_app(
     tmp_path,
     email_client=None,
@@ -1492,3 +1505,105 @@ def test_review_approve_rejects_an_illegal_transition(tmp_path):
     )
 
     assert response.status_code == 409
+
+
+def _submit_for_review_and_approve(client, request_id, draft_solution, approver_id="reviewer-1"):
+    client.post(
+        f"/requests/{request_id}/submit-for-review",
+        json={"analyst_id": "designer-1", "draft_solution": draft_solution},
+    )
+    client.post(f"/requests/{request_id}/review", json={"analyst_id": approver_id, "action": "approve"})
+
+
+def test_validate_endpoint_confirms_accuracy_and_returns_validated_status(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    _submit_for_review_and_approve(client, request_id, _COMPLETE_POWERBI_SOLUTION)
+
+    response = client.post(f"/requests/{request_id}/validate", json={"analyst_id": "data-specialist-1"})
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert body["violations"] == []
+    assert body["request"]["status"] == "validated"
+
+
+def test_validate_endpoint_flags_inaccurate_data_and_returns_violations(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    inaccurate_solution = {
+        "pages": [
+            {
+                "title": "Regional Sales Overview",
+                "visuals": [
+                    {
+                        "type": "kpi_card",
+                        "purpose": "Show customer value",
+                        "field_bindings": ["Customer Lifetime Value"],
+                    }
+                ],
+            }
+        ]
+    }
+    _submit_for_review_and_approve(client, request_id, inaccurate_solution)
+
+    response = client.post(f"/requests/{request_id}/validate", json={"analyst_id": "data-specialist-1"})
+
+    assert response.status_code == 200
+    body = response.get_json()
+    assert len(body["violations"]) == 1
+    assert body["request"]["status"] == "changes_requested"
+
+
+def test_validate_endpoint_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post("/requests/does-not-exist/validate", json={"analyst_id": "data-specialist-1"})
+
+    assert response.status_code == 404
+
+
+def test_validate_endpoint_rejects_missing_analyst_id(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    _submit_for_review_and_approve(client, request_id, _COMPLETE_POWERBI_SOLUTION)
+
+    response = client.post(f"/requests/{request_id}/validate", json={})
+
+    assert response.status_code == 400
+
+
+def test_validate_endpoint_rejects_a_draft_that_has_not_been_approved(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    client.post(
+        f"/requests/{request_id}/submit-for-review",
+        json={"analyst_id": "designer-1", "draft_solution": _COMPLETE_POWERBI_SOLUTION},
+    )
+
+    response = client.post(f"/requests/{request_id}/validate", json={"analyst_id": "data-specialist-1"})
+
+    assert response.status_code == 409
+
+
+def test_validate_endpoint_returns_500_when_audit_log_unavailable(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    _submit_for_review_and_approve(client, request_id, _COMPLETE_POWERBI_SOLUTION)
+    app.config["DATA_VALIDATION"]._audit.append = Mock(side_effect=sqlite3.OperationalError("disk I/O error"))
+
+    response = client.post(f"/requests/{request_id}/validate", json={"analyst_id": "data-specialist-1"})
+
+    assert response.status_code == 500
+    assert response.get_json()["error"] == "audit_log_unavailable"

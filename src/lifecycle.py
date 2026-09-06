@@ -2,8 +2,9 @@ INITIAL_STATUS = "intake"
 
 # Kept deliberately small for this walking skeleton: only the stages the
 # system can actually reach today. STORY-008 adds the review/approval
-# stages; finalization-specific stages beyond "approved" belong to
-# STORY-009, not this one.
+# stages. STORY-009 adds "validated" for a draft whose data accuracy has
+# been confirmed post-approval; publication-specific stages beyond that
+# belong to STORY-010, not this one.
 VALID_STATUSES = (
     "intake",
     "analyzed",
@@ -12,6 +13,7 @@ VALID_STATUSES = (
     "in_review",
     "changes_requested",
     "approved",
+    "validated",
 )
 
 # Which status changes are legal, keyed by current status. A status
@@ -23,8 +25,12 @@ TRANSITIONS: dict[str, tuple[str, ...]] = {
     "analyzed": ("completed", "in_review"),
     "in_review": ("approved", "changes_requested"),
     "changes_requested": ("in_review",),
-    "approved": (),
+    # STORY-009: an approved draft is validated for data accuracy before
+    # finalization. A validation failure reuses the existing
+    # changes_requested correction loop rather than a parallel one.
+    "approved": ("validated", "changes_requested"),
     "completed": (),
+    "validated": (),
 }
 
 

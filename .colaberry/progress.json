@@ -3,13 +3,13 @@
   "project": "PowerBI Blueprint",
   "totals": {
     "stories_total": 11,
-    "stories_verified": 8,
+    "stories_verified": 9,
     "stories_submitted": 0,
-    "stories_in_progress": 3,
+    "stories_in_progress": 2,
     "stories_not_started": 0,
     "criteria_total": 35,
-    "criteria_passed": 26,
-    "points_awarded": 584
+    "criteria_passed": 29,
+    "points_awarded": 657
   },
   "stories": [
     {
@@ -34,7 +34,7 @@
           "passed": true
         },
         {
-          "text": "Trust — no tab shows a number, a connection or a result the project has not actually produced.",
+          "text": "Trust \u00e2\u20ac\u201d no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
         }
       ],
@@ -519,35 +519,44 @@
       "criteria": [
         {
           "text": "Given a draft solution, when validated, then data accuracy is confirmed.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a validation failure, when detected, then the system flags it for correction.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs all validation actions in the audit trail.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "src/lifecycle.py",
+        "src/data_validation_rules.py",
+        "src/data_validation.py",
+        "src/data_validation_routes.py",
+        "src/app.py",
+        "tests/test_data_validation_rules.py",
+        "tests/test_data_validation.py",
+        "tests/test_app.py"
+      ],
+      "tests_added": [
+        "tests/test_data_validation_rules.py (5 tests)",
+        "tests/test_data_validation.py (8 tests)",
+        "tests/test_app.py (6 new validate-route tests)"
+      ],
+      "notes": "Adds a validated lifecycle status to src/lifecycle.py (approved -> validated on success, approved -> changes_requested on failure, reusing STORY-008's existing correction loop rather than a parallel one). src/data_validation_rules.py defines data accuracy deterministically: every field_binding in an approved draft solution must trace back (case-insensitive substring match) to something stated in the request's own analysis (business_objectives, scope, kpis, filters, calculations, visual_requirements, reporting_expectations) -- no model call needed. src/data_validation.py (DataValidation.validate) fetches the approved request, rejects if analysis or draft_solution is missing (MissingValidationDataError), then atomically updates status and writes one audit entry (data_validation_passed or data_validation_failed, the latter storing the joined violations in error_category) in a single transaction, same _transition shape as StakeholderReview. Wired via POST /requests/<id>/validate (src/data_validation_routes.py); a sqlite3.Error during that atomic write is caught and returned as a controlled 500 audit_log_unavailable, since this story's failure list explicitly names audit-trail logging failure as a case to handle.",
+      "updated_at": "2026-09-05T00:00:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
+        "verified_at": "2026-09-05T00:00:00.000Z",
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
-        "points_awarded": null,
-        "outstanding": [
-          "Given a draft solution, when validated, then data accuracy is confirmed.",
-          "Given a validation failure, when detected, then the system flags it for correction.",
-          "Trust: The system logs all validation actions in the audit trail."
-        ]
+        "points_awarded": 73,
+        "outstanding": []
       }
     },
     {

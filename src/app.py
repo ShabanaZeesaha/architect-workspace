@@ -4,6 +4,8 @@ import tempfile
 from flask import Flask, jsonify, request
 
 from src.dashboard_mockup_routes import register_dashboard_mockup_routes
+from src.data_validation import DataValidation
+from src.data_validation_routes import register_data_validation_routes
 from src.design_recommendation_routes import register_design_recommendation_routes
 from src.email_analysis import (
     EmailAnalysisError,
@@ -43,6 +45,7 @@ def create_app(
 
     app.config["REQUEST_STORE"] = RequestIntake(db_path)
     app.config["STAKEHOLDER_REVIEW"] = StakeholderReview(db_path)
+    app.config["DATA_VALIDATION"] = DataValidation(db_path)
     app.config["EMAIL_ANALYSIS_CLIENT"] = email_client
     app.config["DESIGN_RECOMMENDATION_CLIENT"] = design_recommendation_client
     app.config["DASHBOARD_MOCKUP_CLIENT"] = dashboard_mockup_client
@@ -180,6 +183,7 @@ def create_app(
     register_dashboard_mockup_routes(app)
     register_powerbi_solution_routes(app)
     register_stakeholder_review_routes(app)
+    register_data_validation_routes(app)
 
     return app
 
