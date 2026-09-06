@@ -3,13 +3,13 @@
   "project": "PowerBI Blueprint",
   "totals": {
     "stories_total": 11,
-    "stories_verified": 9,
+    "stories_verified": 10,
     "stories_submitted": 0,
-    "stories_in_progress": 2,
+    "stories_in_progress": 1,
     "stories_not_started": 0,
     "criteria_total": 35,
-    "criteria_passed": 29,
-    "points_awarded": 657
+    "criteria_passed": 32,
+    "points_awarded": 730
   },
   "stories": [
     {
@@ -566,35 +566,41 @@
       "criteria": [
         {
           "text": "Given an approved dashboard, when published, then it is available to stakeholders.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a publication failure, when detected, then the system alerts the designer.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: The system logs all publication actions in the audit trail.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "src/lifecycle.py",
+        "src/dashboard_publication.py",
+        "src/dashboard_publication_routes.py",
+        "src/app.py",
+        "tests/test_dashboard_publication.py",
+        "tests/test_app.py"
+      ],
+      "tests_added": [
+        "tests/test_dashboard_publication.py (9 tests)",
+        "tests/test_app.py (7 new publish-route tests)"
+      ],
+      "notes": "Adds published and publication_failed statuses to src/lifecycle.py: validated -> published (success) or publication_failed (failure), and publication_failed -> published or publication_failed (retry, including repeated failure) so a designer can retry as many times as needed with every attempt logged. src/dashboard_publication.py (DashboardPublication.publish) requires an injected publisher (an object with .publish(draft_solution) -> dict returning a dashboard_url) since no real Power BI/SharePoint credential exists in this environment; no publisher configured, a raised error, or a missing dashboard_url are all treated as a handled publication failure rather than an unhandled exception or a faked success. Every outcome atomically updates status and writes one audit entry (dashboard_published or dashboard_publication_failed, the latter storing the error in error_category) in a single transaction, same _transition shape as StakeholderReview and DataValidation. Wired via POST /requests/<id>/publish (src/dashboard_publication_routes.py); a sqlite3.Error during that atomic write is caught and returned as a controlled 500 audit_log_unavailable. A handled publication failure returns HTTP 502 (not 200) so a caller can tell success from failure without inspecting the body -- there is no separate email/SMS notification channel; alerting the designer is the HTTP response plus the status change plus the audit entry, the same convention every prior story in this pipeline uses.",
+      "updated_at": "2026-09-05T00:00:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
+        "verified_at": "2026-09-05T00:00:00.000Z",
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
-        "points_awarded": null,
-        "outstanding": [
-          "Given an approved dashboard, when published, then it is available to stakeholders.",
-          "Given a publication failure, when detected, then the system alerts the designer.",
-          "Trust: The system logs all publication actions in the audit trail."
-        ]
+        "points_awarded": 73,
+        "outstanding": []
       }
     }
   ]

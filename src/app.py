@@ -4,6 +4,8 @@ import tempfile
 from flask import Flask, jsonify, request
 
 from src.dashboard_mockup_routes import register_dashboard_mockup_routes
+from src.dashboard_publication import DashboardPublication
+from src.dashboard_publication_routes import register_dashboard_publication_routes
 from src.data_validation import DataValidation
 from src.data_validation_routes import register_data_validation_routes
 from src.design_recommendation_routes import register_design_recommendation_routes
@@ -36,6 +38,7 @@ def create_app(
     design_recommendation_client=None,
     dashboard_mockup_client=None,
     powerbi_solution_client=None,
+    publication_client=None,
 ) -> Flask:
     app = Flask(__name__, instance_relative_config=True)
     os.makedirs(app.instance_path, exist_ok=True)
@@ -46,10 +49,12 @@ def create_app(
     app.config["REQUEST_STORE"] = RequestIntake(db_path)
     app.config["STAKEHOLDER_REVIEW"] = StakeholderReview(db_path)
     app.config["DATA_VALIDATION"] = DataValidation(db_path)
+    app.config["DASHBOARD_PUBLICATION"] = DashboardPublication(db_path)
     app.config["EMAIL_ANALYSIS_CLIENT"] = email_client
     app.config["DESIGN_RECOMMENDATION_CLIENT"] = design_recommendation_client
     app.config["DASHBOARD_MOCKUP_CLIENT"] = dashboard_mockup_client
     app.config["POWERBI_SOLUTION_CLIENT"] = powerbi_solution_client
+    app.config["PUBLICATION_CLIENT"] = publication_client
 
     @app.get("/health")
     def health():
@@ -184,6 +189,7 @@ def create_app(
     register_powerbi_solution_routes(app)
     register_stakeholder_review_routes(app)
     register_data_validation_routes(app)
+    register_dashboard_publication_routes(app)
 
     return app
 

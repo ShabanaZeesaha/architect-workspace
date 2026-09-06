@@ -144,6 +144,7 @@ def _new_app(
     design_recommendation_client=None,
     dashboard_mockup_client=None,
     powerbi_solution_client=None,
+    publication_client=None,
 ):
     return create_app(
         db_path=str(tmp_path / "test.db"),
@@ -151,6 +152,7 @@ def _new_app(
         design_recommendation_client=design_recommendation_client,
         dashboard_mockup_client=dashboard_mockup_client,
         powerbi_solution_client=powerbi_solution_client,
+        publication_client=publication_client,
     )
 
 
@@ -1604,6 +1606,111 @@ def test_validate_endpoint_returns_500_when_audit_log_unavailable(tmp_path):
     app.config["DATA_VALIDATION"]._audit.append = Mock(side_effect=sqlite3.OperationalError("disk I/O error"))
 
     response = client.post(f"/requests/{request_id}/validate", json={"analyst_id": "data-specialist-1"})
+
+    assert response.status_code == 500
+    assert response.get_json()["error"] == "audit_log_unavailable"
+
+
+def _mock_publication_client(dashboard_url="https://app.powerbi.com/dashboards/abc123"):
+    client = Mock()
+    client.publish.return_value = {"dashboard_url": dashboard_url}
+    return client
+
+
+def _submit_review_approve_and_validate(client, request_id, draft_solution=_COMPLETE_POWERBI_SOLUTION):
+    _submit_for_review_and_approve(client, request_id, draft_solution)
+    client.post(f"/requests/{request_id}/validate", json={"analyst_id": "data-specialist-1"})
+
+
+def test_publish_endpoint_succeeds_and_returns_published_status(tmp_path):
+    email_client = _mock_email_client()
+    publication_client = _mock_publication_client()
+    app = _new_app(tmp_path, email_client=email_client, publication_client=publication_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    _submit_review_approve_and_validate(client, request_id)
+
+    response = client.post(f"/requests/{request_id}/publish", json={"analyst_id": "designer-1"})
+
+    assert response.status_code == 200
+    assert response.get_json()["request"]["status"] == "published"
+
+
+def test_publish_endpoint_returns_502_when_publication_fails(tmp_path):
+    email_client = _mock_email_client()
+    publication_client = Mock()
+    publication_client.publish.side_effect = RuntimeError("Power BI service unreachable")
+    app = _new_app(tmp_path, email_client=email_client, publication_client=publication_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    _submit_review_approve_and_validate(client, request_id)
+
+    response = client.post(f"/requests/{request_id}/publish", json={"analyst_id": "designer-1"})
+
+    assert response.status_code == 502
+    assert response.get_json()["request"]["status"] == "publication_failed"
+
+
+def test_publish_endpoint_returns_502_when_dashboard_url_is_missing(tmp_path):
+    email_client = _mock_email_client()
+    publication_client = Mock()
+    publication_client.publish.return_value = {}
+    app = _new_app(tmp_path, email_client=email_client, publication_client=publication_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    _submit_review_approve_and_validate(client, request_id)
+
+    response = client.post(f"/requests/{request_id}/publish", json={"analyst_id": "designer-1"})
+
+    assert response.status_code == 502
+    assert response.get_json()["request"]["status"] == "publication_failed"
+
+
+def test_publish_endpoint_rejects_missing_analyst_id(tmp_path):
+    email_client = _mock_email_client()
+    publication_client = _mock_publication_client()
+    app = _new_app(tmp_path, email_client=email_client, publication_client=publication_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    _submit_review_approve_and_validate(client, request_id)
+
+    response = client.post(f"/requests/{request_id}/publish", json={})
+
+    assert response.status_code == 400
+
+
+def test_publish_endpoint_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post("/requests/does-not-exist/publish", json={"analyst_id": "designer-1"})
+
+    assert response.status_code == 404
+
+
+def test_publish_endpoint_rejects_a_draft_that_has_not_been_validated(tmp_path):
+    email_client = _mock_email_client()
+    publication_client = _mock_publication_client()
+    app = _new_app(tmp_path, email_client=email_client, publication_client=publication_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    _submit_for_review_and_approve(client, request_id, _COMPLETE_POWERBI_SOLUTION)
+
+    response = client.post(f"/requests/{request_id}/publish", json={"analyst_id": "designer-1"})
+
+    assert response.status_code == 409
+
+
+def test_publish_endpoint_returns_500_when_audit_log_unavailable(tmp_path):
+    email_client = _mock_email_client()
+    publication_client = _mock_publication_client()
+    app = _new_app(tmp_path, email_client=email_client, publication_client=publication_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    _submit_review_approve_and_validate(client, request_id)
+    app.config["DASHBOARD_PUBLICATION"]._audit.append = Mock(side_effect=sqlite3.OperationalError("disk I/O error"))
+
+    response = client.post(f"/requests/{request_id}/publish", json={"analyst_id": "designer-1"})
 
     assert response.status_code == 500
     assert response.get_json()["error"] == "audit_log_unavailable"

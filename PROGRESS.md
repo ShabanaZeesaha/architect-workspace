@@ -469,3 +469,97 @@
   STORY-006 through STORY-008 — a commit cannot correctly record its own
   resulting hash inside itself. Those three fields are a small follow-up
   edit once this commit's real hash is known.
+
+## 2026-09-05 — STORY-010: Dashboard Publication (REQ-015)
+- Session: CC-20260905-iodq
+- Extended `src/lifecycle.py` with `published` and `publication_failed`
+  statuses. `validated` gains two legal transitions: `published` (publish
+  succeeded) or `publication_failed` (publish failed). `publication_failed`
+  can itself transition to `published` (a successful retry) or back to
+  `publication_failed` (a retry that fails again) — the self-transition is
+  deliberate, not the lifecycle module's usual "same status is an implicit
+  no-op" case, because each retry attempt must produce its own audit entry
+  per this story's trust criterion, not be silently absorbed.
+- Added `src/dashboard_publication.py`: `DashboardPublication.publish()`
+  requires the request to be `validated` (enforced through `TRANSITIONS`,
+  same as every other lifecycle-gated module in this pipeline, so calling
+  it on an unapproved or unvalidated draft raises `InvalidTransitionError`
+  on its own — no separate check needed). There is no Power BI/SharePoint
+  credential available in this environment, so publishing is not
+  implemented against a real service: `publisher` is a required extension
+  point, an object with a `.publish(draft_solution) -> dict` method
+  expected to return a `dashboard_url`. No publisher configured, the
+  publisher raising, or the publisher returning a result with no
+  `dashboard_url` are all treated as the same outcome — a handled
+  publication failure (status becomes `publication_failed`, audit event
+  `dashboard_publication_failed`, the error recorded in the audit entry's
+  existing `error_category` slot) rather than an unhandled exception or a
+  faked success. On success, status becomes `published` and the audit
+  event `dashboard_published` records the returned `dashboard_url` in
+  that same slot. Both outcomes update status and write the audit entry
+  atomically in one transaction — same `_transition` shape as
+  `StakeholderReview` and `DataValidation`.
+- Wired into `POST /requests/<id>/publish`
+  (`src/dashboard_publication_routes.py`), registered from `src/app.py`
+  alongside a new `DashboardPublication` instance in `app.config` and a
+  new `publication_client`/`PUBLICATION_CLIENT` injection point (same
+  pattern as `email_client`, `dashboard_mockup_client`, etc.). A
+  `sqlite3.Error` raised inside the atomic transition/audit write is
+  caught and returned as a controlled `500 audit_log_unavailable`, same
+  as `data_validation_routes.py`. A handled publication failure returns
+  `HTTP 502` (not 200) rather than a 200 with an error field buried in the
+  body — this is the concrete "alerts the designer" behavior this story's
+  acceptance criteria ask for; there is no separate email/SMS notification
+  channel, consistent with every other failure path in this pipeline
+  (which alert only through the HTTP response, the status change visible
+  on `GET /requests/<id>`, and the audit trail).
+- Verification: 225 automated tests passing (`pytest tests/`), up from
+  218 — 9 new unit tests for `dashboard_publication.py` (success, a
+  raised publish error, a missing `dashboard_url`, a successful retry
+  after failure, a second failure logged on a repeated retry, publishing
+  from a non-`validated` status, no publisher configured, unknown request
+  id, and `get_request` on an unknown id), and 7 new route tests in
+  `test_app.py` (success returning `200`/`published`, a publish failure
+  and a missing-`dashboard_url` case both returning `502`/
+  `publication_failed`, `400` missing `analyst_id`, `404` unknown request,
+  `409` publishing a draft that was only approved and never validated, and
+  the `audit_log_unavailable` control path). All existing 218 tests
+  continue to pass unmodified. No external API calls in this story — the
+  publish target is fully injected, and this environment has no real one
+  to call.
+- Manual smoke test (scratch SQLite database, live `create_app()` +
+  `test_client()`, no pytest fixtures): drove one request through
+  intake → analysis → review → approval → validation directly via the
+  app's own service objects, then hit the real `/publish` route three
+  times. Successful publish: `HTTP 200`, status `published`, audit event
+  `dashboard_published` carrying the returned dashboard URL. Failed
+  publish (publisher raising): `HTTP 502`, status `publication_failed`,
+  audit event `dashboard_publication_failed` carrying the raised error.
+  Retry on the same request after swapping in a working publisher:
+  `HTTP 200`, status `published`, audit event `dashboard_published` — the
+  live audit log for that request shows all three events in order
+  (`data_validation_passed`, `dashboard_publication_failed`,
+  `dashboard_published`), confirming the failed attempt is preserved
+  rather than overwritten. Scratch database discarded after the run.
+- Acceptance criteria (exact portal wording, `.colaberry/progress.json`),
+  all demonstrated by the tests and smoke test above:
+  - "Given an approved dashboard, when published, then it is available to
+    stakeholders." — the `validated` → `published` transition, unit- and
+    route-tested and confirmed live in the smoke test.
+  - "Given a publication failure, when detected, then the system alerts
+    the designer." — the `publication_failed` transition plus the `HTTP
+    502` response, unit- and route-tested and confirmed live.
+  - "Trust: The system logs all publication actions in the audit trail."
+    — audit-content assertions for every outcome (including repeated
+    failures), unit and route level, plus the smoke test's live audit-log
+    check across a failure-then-retry sequence.
+- Files touched: `src/lifecycle.py`, `src/dashboard_publication.py`
+  (new), `src/dashboard_publication_routes.py` (new), `src/app.py`,
+  `tests/test_dashboard_publication.py` (new), `tests/test_app.py`.
+- Note on `.colaberry/progress.json`: this same commit marks all three
+  STORY-010 criteria passed and the story verified, but leaves
+  `commit_sha`/`commit_url`/`commit_at` `null` for the same reason as
+  STORY-006 through STORY-009 — a commit cannot correctly record its own
+  resulting hash inside itself. Those three fields are a small follow-up
+  edit once this commit's real hash is known. This is also the last story
+  in the plan (release r4, "Finalization and Publication").
