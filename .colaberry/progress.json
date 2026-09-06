@@ -7,15 +7,15 @@
     "stories_submitted": 0,
     "stories_in_progress": 1,
     "stories_not_started": 0,
-    "criteria_total": 35,
-    "criteria_passed": 32,
+    "criteria_total": 36,
+    "criteria_passed": 33,
     "points_awarded": 730
   },
   "stories": [
     {
       "id": "STORY-000",
       "release": null,
-      "acceptance_total": 5,
+      "acceptance_total": 6,
       "criteria": [
         {
           "text": "Given the Command Center, when it is opened, then every tab is reachable and every card drills down one level.",
@@ -36,6 +36,10 @@
         {
           "text": "Trust \u00e2\u20ac\u201d no tab shows a number, a connection or a result the project has not actually produced.",
           "passed": true
+        },
+        {
+          "text": "PREP-1: Given a live demo, when it is presented, then a narrative covering the problem, the one moment, and the guardrail exists at docs/DEMO_NARRATIVE.md.",
+          "passed": true
         }
       ],
       "files_touched": [],
@@ -44,8 +48,8 @@
       "updated_at": null,
       "verification": {
         "state": "verified",
-        "criteria_passed": 5,
-        "criteria_total": 5,
+        "criteria_passed": 6,
+        "criteria_total": 6,
         "verified_at": "2026-08-20T01:03:21.243Z",
         "commit_sha": "2bf9f32cc7f0309b083c8d320ad53d91a14dc463",
         "commit_url": "https://github.com/ShabanaZeesaha/architect-workspace/commit/2bf9f32cc7f0309b083c8d320ad53d91a14dc463",
