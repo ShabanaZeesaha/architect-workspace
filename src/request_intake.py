@@ -6,20 +6,9 @@ from datetime import datetime, timezone
 
 from src.audit_trail import AuditEntry, AuditTrail
 from src.lifecycle import INITIAL_STATUS, TRANSITIONS, VALID_STATUSES, InvalidTransitionError
+from src.request_schema import ensure_schema, fetch_request
 
 __all__ = ["AuditEntry", "InvalidTransitionError", "RequestIntake"]
-
-_SCHEMA = """
-CREATE TABLE IF NOT EXISTS requests (
-    request_id TEXT PRIMARY KEY,
-    text TEXT NOT NULL,
-    source_type TEXT NOT NULL,
-    analyst_id TEXT NOT NULL,
-    submitted_at TEXT NOT NULL,
-    status TEXT NOT NULL,
-    analysis TEXT
-);
-"""
 
 
 class RequestIntake:
@@ -37,7 +26,7 @@ class RequestIntake:
         conn = self._connect()
         try:
             with conn:
-                conn.executescript(_SCHEMA)
+                ensure_schema(conn)
                 self._audit.ensure_schema(conn)
         finally:
             conn.close()
@@ -66,14 +55,7 @@ class RequestIntake:
         return self.get_request(request_id)
 
     def get_request(self, request_id: str) -> dict | None:
-        conn = self._connect()
-        try:
-            row = conn.execute(
-                "SELECT * FROM requests WHERE request_id = ?", (request_id,)
-            ).fetchone()
-        finally:
-            conn.close()
-        return self._row_to_request(row) if row is not None else None
+        return fetch_request(self.db_path, request_id)
 
     def complete_analysis(self, request_id: str, analyst_id: str, analysis: dict) -> dict:
         timestamp = datetime.now(timezone.utc).isoformat()
@@ -174,17 +156,3 @@ class RequestIntake:
 
     def get_audit_log(self, request_id: str | None = None) -> list[AuditEntry]:
         return self._audit.get(request_id)
-
-    @staticmethod
-    def _row_to_request(row: sqlite3.Row) -> dict:
-        record = {
-            "request_id": row["request_id"],
-            "text": row["text"],
-            "source_type": row["source_type"],
-            "analyst_id": row["analyst_id"],
-            "submitted_at": row["submitted_at"],
-            "status": row["status"],
-        }
-        if row["analysis"] is not None:
-            record["analysis"] = json.loads(row["analysis"])
-        return record

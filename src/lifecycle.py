@@ -1,10 +1,18 @@
 INITIAL_STATUS = "intake"
 
 # Kept deliberately small for this walking skeleton: only the stages the
-# system can actually reach today, plus "completed" for REQ-008's "intake to
-# completion" lifecycle. Approval/review-specific stages belong to the story
-# that builds that workflow, not this one.
-VALID_STATUSES = ("intake", "analyzed", "analysis_failed", "completed")
+# system can actually reach today. STORY-008 adds the review/approval
+# stages; finalization-specific stages beyond "approved" belong to
+# STORY-009, not this one.
+VALID_STATUSES = (
+    "intake",
+    "analyzed",
+    "analysis_failed",
+    "completed",
+    "in_review",
+    "changes_requested",
+    "approved",
+)
 
 # Which status changes are legal, keyed by current status. A status
 # transitioning to itself is always allowed (handled separately as an
@@ -12,7 +20,10 @@ VALID_STATUSES = ("intake", "analyzed", "analysis_failed", "completed")
 TRANSITIONS: dict[str, tuple[str, ...]] = {
     "intake": ("analyzed", "analysis_failed"),
     "analysis_failed": ("intake",),
-    "analyzed": ("completed",),
+    "analyzed": ("completed", "in_review"),
+    "in_review": ("approved", "changes_requested"),
+    "changes_requested": ("in_review",),
+    "approved": (),
     "completed": (),
 }
 

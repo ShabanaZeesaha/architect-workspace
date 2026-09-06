@@ -294,3 +294,92 @@
   STORY-006 — a commit cannot correctly record its own resulting hash
   inside itself. Those three fields are a small follow-up edit once this
   commit's real hash is known.
+
+## 2026-09-05 — STORY-008: Stakeholder Review Interface (REQ-013, REQ-012)
+- Session: CC-20260905-k2vt
+- Extended `src/lifecycle.py` with the review/approval stages this story
+  needed: `in_review`, `changes_requested`, `approved`. `analyzed` gained a
+  new legal transition to `in_review` alongside its existing direct path to
+  `completed` (left untouched, so STORY-002's tests still pass unmodified);
+  `in_review` can go to `approved` or `changes_requested`;
+  `changes_requested` can only go back to `in_review` — a stakeholder must
+  see the resubmitted draft again before approving it. `approved` has no
+  outgoing transition yet; whatever comes after approval is STORY-009's
+  concern (Data Validation and Finalization), not this one.
+- STORY-006 and STORY-007 deliberately never persisted the dashboard
+  mockup or draft solution on the request record (each route only returns
+  what it generates). STORY-008's first criterion — stakeholders can
+  access a draft later, a different actor at a different time — needed
+  that data to actually be stored, so this story adds a `draft_solution`
+  column to the `requests` table, migrated onto the existing dev database
+  via an `ALTER TABLE` guard (not just `CREATE TABLE IF NOT EXISTS`, which
+  doesn't touch a table that already exists on disk).
+- Split `src/request_intake.py`'s table schema/migration and row-decoding
+  logic into a new `src/request_schema.py` (`ensure_schema()`,
+  `row_to_request()`, `fetch_request()`) — `request_intake.py` hit this
+  repo's 200-line cap once the new column and a first pass at the review
+  method landed, same split trigger as STORY-003's `audit_trail.py`
+  extraction. Both `src/request_intake.py` and the new
+  `src/stakeholder_review.py` share this module rather than duplicating
+  table knowledge.
+- Added `src/stakeholder_review.py`: `submit_draft_for_review()` persists a
+  draft and moves the request to `in_review`, reusing the lifecycle
+  `TRANSITIONS` map rather than a separate legality rule. `approve()` is
+  the *only* code path in this system that can set a request's status to
+  `approved` — no AI-calling code in this pipeline ever reaches it — which
+  is what satisfies REQ-012's "AI must not finalize... without authorized
+  human review and approval" guardrail as a testable condition, not just a
+  policy statement. `request_changes()` requires non-empty feedback
+  (raises `ValueError` otherwise) and stores it in the audit entry's
+  existing `error_category` column — reused as a general free-text detail
+  slot, the same way STORY-004's field-mapping audit entries and every
+  AI-generation route's failure-detail logging already reuse it; no new
+  column needed. Both `approve()` and `request_changes()` share a private
+  `_transition()` helper (status-legality check + update + one audit
+  entry); `submit_draft_for_review()` stays separate since it also writes
+  the `draft_solution` column, a different `UPDATE` shape.
+- Added `src/stakeholder_review_routes.py`:
+  `POST /requests/<id>/submit-for-review` and
+  `POST /requests/<id>/review` (`action`: `approve` | `request_changes`),
+  registered from `src/app.py` alongside a new `StakeholderReview` instance
+  in `app.config`. No new read endpoint was needed for "stakeholders can
+  access it" — the existing `GET /requests/<id>` (`src/app.py`, unchanged)
+  already returns the full record, which now includes `draft_solution`
+  once a draft has been submitted for review. An illegal transition (e.g.
+  approving a request that was never submitted for review) returns a
+  controlled `409 invalid_transition` rather than a raw exception.
+- Verification: 190 automated tests passing (`pytest tests/`), up from
+  171 — 7 new unit tests for `request_schema.py` (schema creation, the
+  migration path against a pre-existing table missing the column,
+  idempotency, row decoding with/without optional fields, `fetch_request`
+  happy path and unknown-id), 14 for `stakeholder_review.py` (all three
+  methods' happy paths, illegal-transition and unknown-request-id
+  rejections, empty-feedback rejection, and the audit-entry content
+  assertions for both the approver-id/timestamp and the feedback-logging
+  criteria), and 11 new route tests in `test_app.py` (submit-for-review
+  happy path plus its 404/400/409 paths, approve and request-changes happy
+  paths with audit-content assertions, missing-feedback and
+  invalid-action 400s, and 404/409 on the review endpoint). All existing
+  158 tests continue to pass unmodified.
+- Acceptance criteria (exact portal wording, `.colaberry/progress.json`),
+  all demonstrated by the tests above:
+  - "Given a draft, when it is ready for review, then stakeholders can
+    access it." — `test_submit_for_review_persists_draft_and_moves_to_in_review`
+    (submits, then reads it back via the existing detail endpoint).
+  - "Given a draft, when a stakeholder requests changes, then the system
+    logs the request." — `test_review_request_changes_logs_the_feedback`
+    plus the `request_changes` unit tests.
+  - "Trust: Given a draft, when it is approved, then it is logged with the
+    approver's ID and timestamp." — `test_review_approve_logs_approver_id_and_timestamp`
+    plus the `approve` unit tests.
+- Files touched: `src/lifecycle.py`, `src/request_intake.py`,
+  `src/request_schema.py` (new), `src/stakeholder_review.py` (new),
+  `src/stakeholder_review_routes.py` (new), `src/app.py`,
+  `tests/test_request_schema.py` (new), `tests/test_stakeholder_review.py`
+  (new), `tests/test_app.py`.
+- Note on `.colaberry/progress.json`: this same commit marks all three
+  STORY-008 criteria passed and the story verified, but leaves
+  `commit_sha`/`commit_url`/`commit_at` `null` for the same reason as
+  STORY-006 and STORY-007 — a commit cannot correctly record its own
+  resulting hash inside itself. Those three fields are a small follow-up
+  edit once this commit's real hash is known.

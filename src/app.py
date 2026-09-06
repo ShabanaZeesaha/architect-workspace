@@ -19,6 +19,8 @@ from src.field_mapping_routes import register_field_mapping_routes
 from src.powerbi_solution_routes import register_powerbi_solution_routes
 from src.request_intake import RequestIntake
 from src.requirement_clarification_routes import register_requirement_clarification_routes
+from src.stakeholder_review import StakeholderReview
+from src.stakeholder_review_routes import register_stakeholder_review_routes
 
 _ANALYSIS_FAILURE_CATEGORIES = {
     CorruptExcelFileError: "corrupt_excel",
@@ -40,6 +42,7 @@ def create_app(
         db_path = os.path.join(app.instance_path, "powerbi_blueprint.db")
 
     app.config["REQUEST_STORE"] = RequestIntake(db_path)
+    app.config["STAKEHOLDER_REVIEW"] = StakeholderReview(db_path)
     app.config["EMAIL_ANALYSIS_CLIENT"] = email_client
     app.config["DESIGN_RECOMMENDATION_CLIENT"] = design_recommendation_client
     app.config["DASHBOARD_MOCKUP_CLIENT"] = dashboard_mockup_client
@@ -176,6 +179,7 @@ def create_app(
     register_design_recommendation_routes(app)
     register_dashboard_mockup_routes(app)
     register_powerbi_solution_routes(app)
+    register_stakeholder_review_routes(app)
 
     return app
 

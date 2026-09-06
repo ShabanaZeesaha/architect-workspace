@@ -3,13 +3,13 @@
   "project": "PowerBI Blueprint",
   "totals": {
     "stories_total": 11,
-    "stories_verified": 7,
+    "stories_verified": 8,
     "stories_submitted": 0,
-    "stories_in_progress": 4,
+    "stories_in_progress": 3,
     "stories_not_started": 0,
     "criteria_total": 35,
-    "criteria_passed": 23,
-    "points_awarded": 511
+    "criteria_passed": 26,
+    "points_awarded": 584
   },
   "stories": [
     {
@@ -471,35 +471,45 @@
       "criteria": [
         {
           "text": "Given a draft, when it is ready for review, then stakeholders can access it.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Given a draft, when a stakeholder requests changes, then the system logs the request.",
-          "passed": false
+          "passed": true
         },
         {
           "text": "Trust: Given a draft, when it is approved, then it is logged with the approver's ID and timestamp.",
-          "passed": false
+          "passed": true
         }
       ],
-      "files_touched": [],
-      "tests_added": [],
-      "notes": null,
-      "updated_at": null,
+      "files_touched": [
+        "src/lifecycle.py",
+        "src/request_intake.py",
+        "src/request_schema.py",
+        "src/stakeholder_review.py",
+        "src/stakeholder_review_routes.py",
+        "src/app.py",
+        "tests/test_request_schema.py",
+        "tests/test_stakeholder_review.py",
+        "tests/test_app.py"
+      ],
+      "tests_added": [
+        "tests/test_request_schema.py (7 tests)",
+        "tests/test_stakeholder_review.py (14 tests)",
+        "tests/test_app.py (11 new review-route tests)"
+      ],
+      "notes": "Adds review/approval lifecycle stages (in_review, changes_requested, approved) to src/lifecycle.py; persists draft_solution on the request record via a new src/request_schema.py (split out of request_intake.py, which was already at the 200-line cap once submit_draft_for_review needed to land); adds src/stakeholder_review.py (submit_draft_for_review, approve, request_changes) and src/stakeholder_review_routes.py (POST /requests/<id>/submit-for-review, POST /requests/<id>/review). Stakeholder access is the existing GET /requests/<id> endpoint, which now returns draft_solution once submitted. approve() is the only code path that can set status to approved -- no AI-calling code in this pipeline reaches it -- satisfying REQ-012's human-approval gate. request_changes() requires non-empty feedback, stored in the audit entry's existing error_category column (reused, not a new column, same pattern as STORY-004's field-mapping audit entries).",
+      "updated_at": "2026-09-05T00:00:00Z",
       "verification": {
-        "state": "in_progress",
-        "criteria_passed": 0,
+        "state": "verified",
+        "criteria_passed": 3,
         "criteria_total": 3,
-        "verified_at": null,
+        "verified_at": "2026-09-05T00:00:00.000Z",
         "commit_sha": null,
         "commit_url": null,
         "commit_at": null,
-        "points_awarded": null,
-        "outstanding": [
-          "Given a draft, when it is ready for review, then stakeholders can access it.",
-          "Given a draft, when a stakeholder requests changes, then the system logs the request.",
-          "Trust: Given a draft, when it is approved, then it is logged with the approver's ID and timestamp."
-        ]
+        "points_awarded": 73,
+        "outstanding": []
       }
     },
     {

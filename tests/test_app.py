@@ -1302,3 +1302,193 @@ def test_submit_powerbi_solution_request_returns_controlled_error_when_audit_log
     assert response.status_code == 500
     assert response.get_json()["error"] == "audit_log_unavailable"
     solution_client.messages.create.assert_called_once()
+
+
+def test_submit_for_review_persists_draft_and_moves_to_in_review(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/submit-for-review",
+        json={"analyst_id": "designer-1", "draft_solution": {"pages": []}},
+    )
+
+    assert response.status_code == 201
+    assert response.get_json()["status"] == "in_review"
+
+    detail = client.get(f"/requests/{request_id}").get_json()
+    assert detail["request"]["draft_solution"] == {"pages": []}
+
+
+def test_submit_for_review_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post(
+        "/requests/does-not-exist/submit-for-review",
+        json={"analyst_id": "designer-1", "draft_solution": {"pages": []}},
+    )
+
+    assert response.status_code == 404
+
+
+def test_submit_for_review_rejects_missing_analyst_id(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/submit-for-review", json={"draft_solution": {"pages": []}}
+    )
+
+    assert response.status_code == 400
+
+
+def test_submit_for_review_rejects_missing_draft_solution(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/submit-for-review", json={"analyst_id": "designer-1"}
+    )
+
+    assert response.status_code == 400
+
+
+def test_submit_for_review_rejects_an_illegal_transition(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    response = client.post(
+        "/requests", json={"text": "Need a dashboard", "source_type": "email", "analyst_id": "analyst-1"}
+    )
+    request_id = response.get_json()["request_id"]
+    client.post(
+        f"/requests/{request_id}/submit-for-review",
+        json={"analyst_id": "designer-1", "draft_solution": {}},
+    )
+
+    response = client.post(
+        f"/requests/{request_id}/submit-for-review",
+        json={"analyst_id": "designer-1", "draft_solution": {"pages": []}},
+    )
+
+    assert response.status_code == 409
+
+
+def test_review_approve_logs_approver_id_and_timestamp(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    client.post(
+        f"/requests/{request_id}/submit-for-review",
+        json={"analyst_id": "designer-1", "draft_solution": {}},
+    )
+
+    response = client.post(
+        f"/requests/{request_id}/review", json={"analyst_id": "reviewer-1", "action": "approve"}
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["status"] == "approved"
+
+    store = app.config["REQUEST_STORE"]
+    audit_log = store.get_audit_log(request_id)
+    approval_entry = audit_log[-1]
+    assert approval_entry.event == "draft_approved"
+    assert approval_entry.analyst_id == "reviewer-1"
+    assert approval_entry.timestamp
+
+
+def test_review_request_changes_logs_the_feedback(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    client.post(
+        f"/requests/{request_id}/submit-for-review",
+        json={"analyst_id": "designer-1", "draft_solution": {}},
+    )
+
+    response = client.post(
+        f"/requests/{request_id}/review",
+        json={"analyst_id": "reviewer-1", "action": "request_changes", "feedback": "Add a regional filter"},
+    )
+
+    assert response.status_code == 200
+    assert response.get_json()["status"] == "changes_requested"
+
+    store = app.config["REQUEST_STORE"]
+    feedback_entry = store.get_audit_log(request_id)[-1]
+    assert feedback_entry.error_category == "Add a regional filter"
+
+
+def test_review_request_changes_rejects_missing_feedback(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+    client.post(
+        f"/requests/{request_id}/submit-for-review",
+        json={"analyst_id": "designer-1", "draft_solution": {}},
+    )
+
+    response = client.post(
+        f"/requests/{request_id}/review", json={"analyst_id": "reviewer-1", "action": "request_changes"}
+    )
+
+    assert response.status_code == 400
+
+
+def test_review_rejects_an_invalid_action(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/review", json={"analyst_id": "reviewer-1", "action": "delete"}
+    )
+
+    assert response.status_code == 400
+
+
+def test_review_rejects_missing_analyst_id(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(f"/requests/{request_id}/review", json={"action": "approve"})
+
+    assert response.status_code == 400
+
+
+def test_review_returns_404_for_unknown_request_id(tmp_path):
+    app = _new_app(tmp_path)
+    client = app.test_client()
+
+    response = client.post(
+        "/requests/does-not-exist/review", json={"analyst_id": "reviewer-1", "action": "approve"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_review_approve_rejects_an_illegal_transition(tmp_path):
+    email_client = _mock_email_client()
+    app = _new_app(tmp_path, email_client=email_client)
+    client = app.test_client()
+    request_id = _submit_and_analyze_email_request(client)
+
+    response = client.post(
+        f"/requests/{request_id}/review", json={"analyst_id": "reviewer-1", "action": "approve"}
+    )
+
+    assert response.status_code == 409
